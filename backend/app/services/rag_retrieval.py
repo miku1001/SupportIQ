@@ -5,7 +5,7 @@ from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 import time
 from openrouter import errors as openrouter_errors
-
+from functools import lru_cache
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
 embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -19,6 +19,7 @@ model = ChatOpenRouter(
     presence_penalty=0.0
 )
 
+@lru_cache(maxsize=128)
 def generate_response(company_id: str, user_message: str):
   print(f"User: {user_message}")
 
