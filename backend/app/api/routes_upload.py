@@ -6,16 +6,19 @@ from app.services.rag_ingest import process_and_store_document
 router = APIRouter()
 
 @router.post("/api/upload")
-async def upload_document(company_id: str = Form(...), file: str = File(...)):
+async def upload_document(company_id: str = Form(...), file: UploadFile = File(...)):
   print(f"file accepted from {company_id}, {file.filename}")
 
   extracted_text = ""
 
   try:
-    if file.filename.endswith("pdf"):
+    if file.filename.endswith(".pdf"):
       # Basahin ang PDF
       pdf_bytes = await file.read()
       pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_bytes))
+
+      for page in pdf_reader.pages:
+          extracted_text += page.extract_text() + "\n"
 
     elif file.filename.endswith(".txt"):
           # Basahin ang normal na text file
