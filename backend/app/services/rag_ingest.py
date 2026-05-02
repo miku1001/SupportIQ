@@ -15,7 +15,7 @@ print("Naghahanda ng AI Embedding model...")
 embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 #store and process data document
-def process_and_store_document(company_id:str, document_text:str):
+def process_and_store_document(company_id: str, document_text: str, upload_id: str | None = None, filename: str | None = None):
     print(f"Chuning document for {company_id}...")
     splitter = RecursiveCharacterTextSplitter(chunk_size=150, chunk_overlap=20)
     chunks = splitter.split_text(document_text)
@@ -25,11 +25,17 @@ def process_and_store_document(company_id:str, document_text:str):
         
         vector = embeddings_model.embed_query(chunk)
         
-        supabase.table("document_chunks").insert({
+        payload = {
             "company_id": company_id,
             "content": chunk,
-            "embedding": vector
-        }).execute()
+            "embedding": vector,
+        }
+        if upload_id:
+            payload["upload_id"] = upload_id
+        if filename:
+            payload["source_filename"] = filename
+
+        supabase.table("document_chunks").insert(payload).execute()
 
     return {
         "status":"success",
