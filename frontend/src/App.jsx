@@ -25,7 +25,7 @@ function App(){
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [chatHistory, setChatHistory] = useState([
-    { sender: "ai", text: "Hello! Ako ang AI assistant ng TechNova. Paano kita matutulungan?" }
+    { sender: "ai", text: "Hi! how can I help you?" }
   ])
 
   //functions
@@ -150,7 +150,7 @@ function App(){
                   {/* DYNAMIC COLORS: Kung user, blue box at white text. Kung AI, white box at dark text. */}
                   <div className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm break-words overflow-hidden ${
                     chat.sender === 'user' 
-                      ? 'bg-blue-600 text-white rounded-br-none' 
+                      ? 'bg-blue-600 text-white rounded-br-none shadow-md' 
                       : 'bg-zinc-200 text-zinc-800 shadow-md rounded-bl-none'
                   }`}> {chat.text}
                   </div>
@@ -184,7 +184,21 @@ function App(){
         </div>
         {/* company info */}
         <div className="h-[88vh] w-1/4 bg-zinc-50 p-6 hidden lg:block rounded-xl">
-        
+            <CardHeader className="p-0 text-center flex flex-col items-center">
+              <Avatar className="w-24 h-24 mb-4">
+                <AvatarFallback className="text-2xl bg-zinc-100 text-zinc-600">
+                  {/* Kinukuha ulit natin ang details galing sa state ng selectedCompany */}
+                  {selectedCompany.initials}
+                </AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-xl">{selectedCompany.name}</CardTitle>
+              <CardDescription className="flex items-center justify-center gap-1 mt-1 text-sm text-zinc-600">
+                <MapPin className="w-3 h-3 text-red-600" /> {selectedCompany.location}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 mt-6 text-sm text-zinc-600 text-center">
+              <p>{selectedCompany.description}</p>
+            </CardContent>
         </div>
       </div>
     </div>
