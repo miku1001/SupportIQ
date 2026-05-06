@@ -25,6 +25,32 @@ function AdminLogin() {
   // Used for navigation
   const navigate = useNavigate();
 
+  const handlePostAuthNavigation = () => {
+    const existingCompanyId = localStorage.getItem('companyId');
+    if (existingCompanyId) {
+      navigate('/dashboard');
+      return;
+    }
+
+    setShowCompanyForm(true);
+  };
+
+  React.useEffect(() => {
+    const syncSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Unable to read Supabase session:', error);
+        return;
+      }
+
+      if (data?.session?.user) {
+        handlePostAuthNavigation();
+      }
+    };
+
+    syncSession();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -45,12 +71,7 @@ function AdminLogin() {
           setWarningMessage("Please confirm your email before signing in.");
         } else {
           setSuccessMessage("Logged in successfully.");
-          const existingCompanyId = localStorage.getItem('companyId');
-          if (existingCompanyId) {
-            navigate('/dashboard');
-          } else {
-            setShowCompanyForm(true);
-          }
+          handlePostAuthNavigation();
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -84,6 +105,31 @@ function AdminLogin() {
     } catch (error) {
       setErrorMessage("Something went wrong. Please try again.");
       console.error("Supabase auth error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthLogin = async (provider) => {
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    setWarningMessage('');
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/admin`,
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+      }
+    } catch (error) {
+      setErrorMessage('Unable to start OAuth sign-in.');
+      console.error('Supabase OAuth error:', error);
     } finally {
       setLoading(false);
     }
@@ -175,7 +221,7 @@ function AdminLogin() {
   const AuthShell = ({ children, showBack, onBack }) => (
     <div className="min-h-screen bg-zinc-950 text-white">
       <div className="grid min-h-screen lg:grid-cols-[.75fr_1fr]">
-        <div className="hidden lg:flex flex-col justify-between border-r border-white/10 bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-900 px-12 py-10">
+        <div className="hidden lg:flex flex-col justify-between border-r border-white/10 bg-linear-to-b from-zinc-900 via-zinc-950 to-zinc-900 px-12 py-10">
           <div className="flex items-center gap-3 text-white">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600/20 ring-1 ring-blue-500/40">
               <Building2 className="h-5 w-5 text-blue-400" />
@@ -388,6 +434,24 @@ function AdminLogin() {
             {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
           </Button>
         </form>
+
+        {isLogin && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2 border-white/10 bg-white/5 text-white hover:bg-white/10"
+            onClick={() => handleOAuthLogin('google')}
+            disabled={loading}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path fill="#4285F4" d="M533.5 278.4c0-17.4-1.6-34.2-4.6-50.4H272v95.4h147.4c-6.3 34.1-25 62.9-53.4 82.2v68.1h86.3c50.6-46.6 80.2-115.2 80.2-195.3z"/>
+              <path fill="#34A853" d="M272 544.3c72.6 0 133.6-24 178-65.3l-86.3-68.1c-24.1 16.2-55 25.8-91.7 25.8-70.6 0-130.4-47.8-151.8-112.2H31.2v70.6C75.7 475.8 167.9 544.3 272 544.3z"/>
+              <path fill="#FBBC05" d="M120.2 322.5c-10.8-32.4-10.8-67.3 0-99.7V152.2H31.2c-39.5 77.2-39.5 168.4 0 245.6l89-75.3z"/>
+              <path fill="#EA4335" d="M272 107.1c39.5 0 75 13.6 103 40.5l77.2-77.2C405.6 24 344.6 0 272 0 167.9 0 75.7 68.5 31.2 169.9l89 75.3C141.6 154.9 201.4 107.1 272 107.1z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </Button>
+        )}
 
         <div className="flex items-center gap-4 text-xs text-zinc-500">
           <span className="h-px flex-1 bg-white/10" />

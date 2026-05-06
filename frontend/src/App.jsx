@@ -27,6 +27,8 @@ function ClientChat(){
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [companiesLoading, setCompaniesLoading] = useState(true);
+  const [companiesError, setCompaniesError] = useState("");
   const [message, setMessage] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -39,21 +41,46 @@ function ClientChat(){
   const [chatHistoryByCompany, setChatHistoryByCompany] = useState({});
   const defaultGreeting = { sender: "ai", text: "Hi! how can I help you?" };
 
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/api/companies");
-        const data = await response.json();
-        setCompanies(data);
-        if (data.length > 0) {
-          setSelectedCompany(data[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching companies:", error);
+  const fetchCompanies = async () => {
+    try {
+      setCompaniesLoading(true);
+      setCompaniesError("");
+
+      const response = await fetch("http://localhost:8000/api/companies");
+      if (!response.ok) {
+        throw new Error("Hindi ma-load ang listahan ng companies.");
       }
-    };
+
+      const data = await response.json();
+      const companyList = Array.isArray(data) ? data : [];
+      setCompanies(companyList);
+      setSelectedCompany((prev) => {
+        if (prev && companyList.some((company) => company.id === prev.id)) {
+          return prev;
+        }
+        return companyList.length > 0 ? companyList[0] : null;
+      });
+    } catch (error) {
+      setCompanies([]);
+      setSelectedCompany(null);
+      setCompaniesError(error.message || "May error sa pagkuha ng company data.");
+      console.error("Error fetching companies:", error);
+    } finally {
+      setCompaniesLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCompanies();
   }, []);
+
+  const activeCompany = selectedCompany ?? {
+    id: "no-companies",
+    name: "No companies available",
+    initials: "--",
+    location: "",
+    description: "No company has been added yet.",
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -127,8 +154,17 @@ function ClientChat(){
     }
   };
 
-  if (!selectedCompany) {
+  if (companiesLoading) {
     return <div className="flex items-center justify-center h-screen">Kinukuha ang data sa Supabase...</div>;
+  }
+
+  if (companiesError) {
+    return (
+      <div className="flex flex-col gap-3 items-center justify-center h-screen text-center px-6">
+        <p className="text-base text-zinc-800 dark:text-zinc-200">{companiesError}</p>
+        <Button onClick={fetchCompanies} variant="outline">Subukan ulit</Button>
+      </div>
+    );
   }
 
   const handleInputChange = (e) => {
@@ -191,29 +227,35 @@ function ClientChat(){
         }`}>
           <ScrollArea className="flex-1 h-full">
             <div className="p-2 space-y-1">
-              {companies.map((company) => (
-                <button
-                  key={company.id}
-                  onClick = {() => {
-                    setSelectedCompany(company)
-                    setSidebarOpen(false)
-                  }}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left
-                        ${selectedCompany?.id === company.id ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-                >
-                  <Avatar>
-                    <AvatarFallback className={selectedCompany?.id === company.id ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100'}>
-                      {company.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="overflow-hidden">
-                    <p className={`text-sm font-medium truncate ${selectedCompany?.id === company.id ? 'text-blue-900 dark:text-blue-100' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                      {company.name}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{company.location}</p>
-                  </div>
-                </button>
-              ))}
+              {companies.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-zinc-300 px-3 py-4 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                  No companies available
+                </div>
+              ) : (
+                companies.map((company) => (
+                  <button
+                    key={company.id}
+                    onClick={() => {
+                      setSelectedCompany(company)
+                      setSidebarOpen(false)
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left
+                          ${selectedCompany?.id === company.id ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  >
+                    <Avatar>
+                      <AvatarFallback className={selectedCompany?.id === company.id ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100'}>
+                        {company.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="overflow-hidden">
+                      <p className={`text-sm font-medium truncate ${selectedCompany?.id === company.id ? 'text-blue-900 dark:text-blue-100' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                        {company.name}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{company.location}</p>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -221,25 +263,34 @@ function ClientChat(){
         <div className="flex-1 h-full flex flex-col bg-zinc-100 dark:bg-zinc-900 md:h-[88vh] md:rounded-xl md:mr-3 md:w-11/20">
           <div className="p-4 border-b border-zinc-400 dark:border-zinc-700 shrink-0 flex items-center gap-3 rounded-t-full">
              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100 text-xs">{selectedCompany.initials}</AvatarFallback>
+                <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100 text-xs">{activeCompany.initials}</AvatarFallback>
              </Avatar>
              <div>
-               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Chat with {selectedCompany.name} AI</h3>
+               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Chat with {activeCompany.name} AI</h3>
              </div>
           </div>
 
           <ScrollArea className="flex-1 p-4 overflow-hidden">
             <div className="space-y-4 max-w-3xl mx-auto">
-              {(chatHistoryByCompany[selectedCompany.id] || [defaultGreeting]).map((chat, idx) => (
-                <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm break-words overflow-hidden ${
-                    chat.sender === 'user' 
-                      ? 'bg-blue-600 text-white rounded-br-none shadow-md' 
-                      : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 shadow-md rounded-bl-none'
-                  }`}> {chat.text}
+              {selectedCompany ? (
+                (chatHistoryByCompany[selectedCompany.id] || [defaultGreeting]).map((chat, idx) => (
+                  <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm wrap-break-word overflow-hidden ${
+                      chat.sender === 'user' 
+                        ? 'bg-blue-600 text-white rounded-br-none shadow-md' 
+                        : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 shadow-md rounded-bl-none'
+                    }`}> {chat.text}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex h-full min-h-60 items-center justify-center text-center">
+                  <div className="max-w-md space-y-3 rounded-2xl border border-dashed border-zinc-300 bg-white/60 px-6 py-8 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-950/40 dark:text-zinc-300">
+                    <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">No companies available</p>
+                    <p className="text-sm">The chat page is still available, but there is no company to chat with yet.</p>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </ScrollArea>
 
@@ -251,13 +302,13 @@ function ClientChat(){
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message here.. (Shift+Enter for newline)"
-                className="px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-100 w-full min-h-[10px] max-h-[200px] h-auto resize-none overflow-hidden border border-transparent focus:border-black dark:focus:border-zinc-500 focus:outline-none focus:ring-0 py-2"
+                className="px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-100 w-full  max-h-50 h-auto resize-none overflow-hidden border border-transparent focus:border-black dark:focus:border-zinc-500 focus:outline-none focus:ring-0 py-1"
               />
               <Button
                 onClick={handleSendMessages}
                 size="icon"
                 className="rounded-full flex items-center justify-center w-10 h-10 p-2"
-                disabled={isSending}
+                disabled={isSending || !selectedCompany}
               >
                 <Send className="w-6 h-6 block" />
               </Button>
@@ -266,6 +317,12 @@ function ClientChat(){
         </div>
         
         <div className="h-[88vh] w-1/4 bg-zinc-50 dark:bg-zinc-900 p-6 hidden lg:block rounded-xl">
+            {!selectedCompany ? (
+              <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-300 text-center">
+                <p>No companies available.</p>
+              </CardContent>
+            ) : (
+            <>
             <CardHeader className="p-0 text-center flex flex-col items-center">
               <Avatar className="w-24 h-24 mb-4">
                 <AvatarFallback className="text-2xl bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-100">
@@ -280,6 +337,8 @@ function ClientChat(){
             <CardContent className="p-0 mt-6 text-sm text-zinc-600 dark:text-zinc-300 text-center">
               <p>{selectedCompany.description}</p>
             </CardContent>
+            </>
+            )}
         </div>
       </div>
     </div>
