@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Building2, MapPin, Menu, X } from "lucide-react";
+import { Send, Building2, MapPin, Menu, X, Moon, Sun } from "lucide-react";
 import './App.css'
 
 // const MOCK_COMPANIES = [
@@ -30,6 +30,11 @@ function ClientChat(){
   const [message, setMessage] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem("supportiq-theme");
+    if (stored === "light" || stored === "dark") return stored;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
 
   const [chatHistoryByCompany, setChatHistoryByCompany] = useState({});
   const defaultGreeting = { sender: "ai", text: "Hi! how can I help you?" };
@@ -49,6 +54,16 @@ function ClientChat(){
     };
     fetchCompanies();
   }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("supportiq-theme", theme);
+  }, [theme]);
 
   const textareaRef = React.useRef(null)
 
@@ -132,9 +147,9 @@ function ClientChat(){
   }
 
   return (
-    <div className = "flex flex-col h-screen bg-zinc-200">
+    <div className = "flex flex-col h-screen bg-zinc-200 dark:bg-zinc-950">
       {/* navbar */}
-      <nav className="flex items-center justify-between px-4 md:px-20 py-4 mb-2 shadow-sm h-14 bg-zinc-50 border border-zinc-400">
+      <nav className="flex items-center justify-between px-4 md:px-20 py-4 mb-2 h-14 bg-zinc-50 border border-zinc-400 dark:bg-zinc-900 dark:border-zinc-700">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -148,8 +163,18 @@ function ClientChat(){
           <span className="text-sm font-bold">SupportIQ</span>
         </div>
 
-        {/* 3. NILAGYAN NATIN NG onClick ANG ADMIN LOGIN BUTTON */}
-        <Button onClick={() => navigate('/admin')} variant="outline" size='sm'>Admin Login</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle dark mode"
+          >
+            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
+          {/* 3. NILAGYAN NATIN NG onClick ANG ADMIN LOGIN BUTTON */}
+          <Button onClick={() => navigate('/admin')} variant="outline" size='sm'>Admin Login</Button>
+        </div>
       </nav>
             
       {/* MAIN CONTENT */}
@@ -161,7 +186,7 @@ function ClientChat(){
           />
         )}
 
-        <div className={`fixed md:relative left-0 top-14 md:top-auto bottom-0 w-64 md:w-1/5 md:h-[88vh] md:ml-3 md:mr-3 flex flex-col bg-zinc-50 rounded-xl overflow-hidden z-40 transition-transform md:translate-x-0 ${
+        <div className={`fixed md:relative left-0 top-14 md:top-auto bottom-0 w-64 md:w-1/5 md:h-[88vh] md:ml-3 md:mr-3 flex flex-col bg-zinc-50 dark:bg-zinc-900 rounded-xl overflow-hidden z-40 transition-transform md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <ScrollArea className="flex-1 h-full">
@@ -174,18 +199,18 @@ function ClientChat(){
                     setSidebarOpen(false)
                   }}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left
-                        ${selectedCompany?.id === company.id ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-zinc-100'}`}
+                        ${selectedCompany?.id === company.id ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 >
                   <Avatar>
-                    <AvatarFallback className={selectedCompany?.id === company.id ? 'bg-blue-600 text-white' : ''}>
+                    <AvatarFallback className={selectedCompany?.id === company.id ? 'bg-blue-600 text-white' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-100'}>
                       {company.initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="overflow-hidden">
-                    <p className={`text-sm font-medium truncate ${selectedCompany?.id === company.id ? 'text-blue-900' : 'text-zinc-900'}`}>
+                    <p className={`text-sm font-medium truncate ${selectedCompany?.id === company.id ? 'text-blue-900 dark:text-blue-100' : 'text-zinc-900 dark:text-zinc-100'}`}>
                       {company.name}
                     </p>
-                    <p className="text-xs text-zinc-500 truncate">{company.location}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{company.location}</p>
                   </div>
                 </button>
               ))}
@@ -193,13 +218,13 @@ function ClientChat(){
           </ScrollArea>
         </div>
         
-        <div className="flex-1 h-full flex flex-col bg-zinc-100 md:h-[88vh] md:rounded-xl md:mr-3 md:w-11/20">
-          <div className="p-4 border-b border-zinc-400 shrink-0 flex items-center gap-3 rounded-t-full">
+        <div className="flex-1 h-full flex flex-col bg-zinc-100 dark:bg-zinc-900 md:h-[88vh] md:rounded-xl md:mr-3 md:w-11/20">
+          <div className="p-4 border-b border-zinc-400 dark:border-zinc-700 shrink-0 flex items-center gap-3 rounded-t-full">
              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">{selectedCompany.initials}</AvatarFallback>
+                <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100 text-xs">{selectedCompany.initials}</AvatarFallback>
              </Avatar>
              <div>
-               <h3 className="text-sm font-semibold text-zinc-900">Chat with {selectedCompany.name} AI</h3>
+               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Chat with {selectedCompany.name} AI</h3>
              </div>
           </div>
 
@@ -210,7 +235,7 @@ function ClientChat(){
                   <div className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm break-words overflow-hidden ${
                     chat.sender === 'user' 
                       ? 'bg-blue-600 text-white rounded-br-none shadow-md' 
-                      : 'bg-zinc-200 text-zinc-800 shadow-md rounded-bl-none'
+                      : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 shadow-md rounded-bl-none'
                   }`}> {chat.text}
                   </div>
                 </div>
@@ -218,7 +243,7 @@ function ClientChat(){
             </div>
           </ScrollArea>
 
-          <div className="p-4 bg-zinc-300 rounded-b-xl shrink-0">
+          <div className="p-4 bg-zinc-300 dark:bg-zinc-800 rounded-b-xl shrink-0">
             <div className="max-w-3xl mx-auto flex items-center gap-2">
               <textarea
                 ref={textareaRef}
@@ -226,7 +251,7 @@ function ClientChat(){
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message here.. (Shift+Enter for newline)"
-                className="px-3 rounded-xl bg-zinc-50 w-full min-h-[10px] max-h-[200px] h-auto resize-none overflow-hidden border border-transparent focus:border-black focus:outline-none focus:ring-0 py-2"
+                className="px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-100 w-full min-h-[10px] max-h-[200px] h-auto resize-none overflow-hidden border border-transparent focus:border-black dark:focus:border-zinc-500 focus:outline-none focus:ring-0 py-2"
               />
               <Button
                 onClick={handleSendMessages}
@@ -240,19 +265,19 @@ function ClientChat(){
           </div>
         </div>
         
-        <div className="h-[88vh] w-1/4 bg-zinc-50 p-6 hidden lg:block rounded-xl">
+        <div className="h-[88vh] w-1/4 bg-zinc-50 dark:bg-zinc-900 p-6 hidden lg:block rounded-xl">
             <CardHeader className="p-0 text-center flex flex-col items-center">
               <Avatar className="w-24 h-24 mb-4">
-                <AvatarFallback className="text-2xl bg-zinc-100 text-zinc-600">
+                <AvatarFallback className="text-2xl bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-100">
                   {selectedCompany.initials}
                 </AvatarFallback>
               </Avatar>
-              <CardTitle className="text-xl">{selectedCompany.name}</CardTitle>
-              <CardDescription className="flex items-center justify-center gap-1 mt-1 text-sm text-zinc-600">
+              <CardTitle className="text-xl dark:text-zinc-100">{selectedCompany.name}</CardTitle>
+              <CardDescription className="flex items-center justify-center gap-1 mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                 <MapPin className="w-3 h-3 text-red-600" /> {selectedCompany.location}
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 mt-6 text-sm text-zinc-600 text-center">
+            <CardContent className="p-0 mt-6 text-sm text-zinc-600 dark:text-zinc-300 text-center">
               <p>{selectedCompany.description}</p>
             </CardContent>
         </div>
