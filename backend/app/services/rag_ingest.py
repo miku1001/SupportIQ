@@ -14,11 +14,18 @@ supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_
 print("Naghahanda ng AI Embedding model...")
 embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-#store and process data document
+def normalize_text(text: str) -> str:
+    # Light cleanup for PDF artifacts and excessive whitespace
+    cleaned = "\n".join(line.strip() for line in text.splitlines())
+    cleaned = "\n".join(line for line in cleaned.splitlines() if line)
+    return cleaned
+
+# store and process data document
 def process_and_store_document(company_id: str, document_text: str, upload_id: str | None = None, filename: str | None = None):
     print(f"Chuning document for {company_id}...")
-    splitter = RecursiveCharacterTextSplitter(chunk_size=150, chunk_overlap=20)
-    chunks = splitter.split_text(document_text)
+    normalized_text = normalize_text(document_text)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=900, chunk_overlap=180)
+    chunks = splitter.split_text(normalized_text)
 
     for chunk in chunks:
         print(f"Pino-proseso at isine-save: {chunk[:30]}...")

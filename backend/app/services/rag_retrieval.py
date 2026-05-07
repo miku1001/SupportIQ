@@ -5,58 +5,69 @@ from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 import time
 from openrouter import errors as openrouter_errors
-from functools import lru_cache
+# from functools import lru_cache
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
 embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 model = ChatOpenRouter(
-    model="gpt-4o-mini",
-    temperature=0.2,          # less hallucination
-    top_p=0.9,                # mas controlled kaysa top_k lang
-    max_completion_tokens=100,
-    frequency_penalty=0.2,    # iwas ulit-ulit
-    presence_penalty=0.0
+  model="gpt-4.1-mini",
+  temperature=0.4,          # keep answers natural but grounded
+  top_p=0.9,                # mas controlled kaysa top_k lang
+  max_completion_tokens=300,
+  frequency_penalty=0.2,    # iwas ulit-ulit
+  presence_penalty=0.0
 )
 
-@lru_cache(maxsize=128)
+# @lru_cache(maxsize=128)
 def generate_response(company_id: str, user_message: str):
   print(f"User: {user_message}")
 
   query_vector = embeddings_model.embed_query(user_message)
 
-  response = supabase.rpc("match_documents", {
-        "query_embedding": query_vector,
-        "match_threshold": 0.3, # Gaano ka-strict (0 to 1). 0.3 is good for basic matching.
-        "match_count": 3,     
-        "p_company_id": company_id
-    }).execute()
+  try:
+    response = supabase.rpc("match_documents_hybrid", {
+          "query_embedding": query_vector,
+          "query_text": user_message,
+          "match_threshold": 0.25,
+          "match_count": 12,
+          "p_company_id": company_id
+      }).execute()
+  except Exception:
+    response = supabase.rpc("match_documents", {
+          "query_embedding": query_vector,
+          "match_threshold": 0.3, # Gaano ka-strict (0 to 1). 0.3 is good for basic matching.
+          "match_count": 10,
+          "p_company_id": company_id
+      }).execute()
 
   found_text = response.data
 
+  fallback_message = "Sorry, I don't have exact info to your inquiries."
+
   if not found_text:
-    context = "No context found in database"
-  else:
-    context = "\n\n".join(doc['content'] for doc in found_text)
+    return fallback_message
+
+  context = "\n\n".join(doc["content"] for doc in found_text)
   
   prompt_template = ChatPromptTemplate.from_messages([
-      ("system", """You are a polite and intelligent customer support agent.
+      ("system", """You are a helpful, concise assistant. Use ONLY the provided context.
 
-  Use ONLY the information from the CONTEXT below to answer the user's question.
+  RULES:
+  - Answer ONLY if the answer is clearly supported by the context.
+  - You may paraphrase, but do NOT add new facts.
+  - If the context is partial or unclear, ask one short follow-up question.
+  - If the context does not contain the answer, reply EXACTLY: "Sorry, I don't have exact info to your inquiries."
+  - IMPORTANT: Reply in the same language as the user's question.
+  - Keep answers short and natural (1-2 sentences).
 
-  Strict rules:
-  - DO NOT use prior knowledge
-  - DO NOT make up answers
-  - If the answer is not in the context, respond exactly with:
-    "I'm sorry, I cannot find the answer in the provided information. I will refer you to a human agent."
-
-  - Keep your answer concise, clear, and direct.
-
-  CONTEXT:
+  <context>
   {context}
-  """),
-      ("user", "{question}")
-  ])
+  </context>
+
+  You are NOT a general assistant. You are NOT a calculator. You are NOT a summarizer."""),
+      ("user", "User Query: {question}")
+    ])
 
   chain = prompt_template | model
 

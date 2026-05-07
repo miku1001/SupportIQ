@@ -7,6 +7,7 @@ import heroImg from './assets/hero.png'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 
 import AdminLogin from './pages/CompanyLogin';
+import AuthCallback from './pages/AuthCallback';
 import CompanyDashboard from './pages/CompanyDashboard';
 
 import {Button} from "@/components/ui/button"
@@ -93,6 +94,7 @@ function ClientChat(){
   }, [theme]);
 
   const textareaRef = React.useRef(null)
+  const chatEndRef = React.useRef(null)
 
   const handleSendMessages = async () => {
     if (!message.trim() || !selectedCompany || isSending) return;
@@ -153,6 +155,10 @@ function ClientChat(){
       setIsSending(false);
     }
   };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [selectedCompany, chatHistoryByCompany])
 
   if (companiesLoading) {
     return <div className="flex items-center justify-center h-screen">Kinukuha ang data sa Supabase...</div>;
@@ -271,14 +277,14 @@ function ClientChat(){
           </div>
 
           <ScrollArea className="flex-1 p-4 overflow-hidden">
-            <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="space-y-4 max-w-3xl">
               {selectedCompany ? (
                 (chatHistoryByCompany[selectedCompany.id] || [defaultGreeting]).map((chat, idx) => (
                   <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-sm rounded-2xl px-4 py-2.5 text-sm wrap-break-word overflow-hidden ${
                       chat.sender === 'user' 
-                        ? 'bg-blue-600 text-white rounded-br-none shadow-md' 
-                        : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 shadow-md rounded-bl-none'
+                        ? 'bg-blue-600 text-white rounded-br-none shadow-md text-right' 
+                        : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100 shadow-md rounded-bl-none text-left'
                     }`}> {chat.text}
                     </div>
                   </div>
@@ -291,11 +297,12 @@ function ClientChat(){
                   </div>
                 </div>
               )}
+              <div ref={chatEndRef} />
             </div>
           </ScrollArea>
 
           <div className="p-4 bg-zinc-300 dark:bg-zinc-800 rounded-b-xl shrink-0">
-            <div className="max-w-3xl mx-auto flex items-center gap-2">
+            <div className="max-w-3xl flex items-center gap-2">
               <textarea
                 ref={textareaRef}
                 value={message}
@@ -352,6 +359,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ClientChat />} />
         <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/dashboard" element={<CompanyDashboard />} />
       </Routes>
     </Router>

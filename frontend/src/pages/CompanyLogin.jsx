@@ -1,224 +1,14 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/lib/supabaseClient";
 
-function AdminLogin() {
-  // Track whether the form is in login or signup mode
-  const [isLogin, setIsLogin] = useState(true);
-  
-  // Form state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [warningMessage, setWarningMessage] = useState('');
-  const [showCompanyForm, setShowCompanyForm] = useState(false);
-  const [companyName, setCompanyName] = useState('');
-  const [companyLocation, setCompanyLocation] = useState('');
-  const [companyDescription, setCompanyDescription] = useState('');
-  const [resetCooldown, setResetCooldown] = useState(0);
-  
-  // Used for navigation
-  const navigate = useNavigate();
+const getCompanyStorageKey = (id) => `companyId:${id}`;
 
-  const handlePostAuthNavigation = () => {
-    const existingCompanyId = localStorage.getItem('companyId');
-    if (existingCompanyId) {
-      navigate('/dashboard');
-      return;
-    }
-
-    setShowCompanyForm(true);
-  };
-
-  React.useEffect(() => {
-    const syncSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Unable to read Supabase session:', error);
-        return;
-      }
-
-      if (data?.session?.user) {
-        handlePostAuthNavigation();
-      }
-    };
-
-    syncSession();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMessage('');
-    setSuccessMessage('');
-    setWarningMessage('');
-
-    try {
-      if (isLogin) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          setErrorMessage(error.message);
-        } else if (data?.user && !data.user.email_confirmed_at) {
-          setWarningMessage("Please confirm your email before signing in.");
-        } else {
-          setSuccessMessage("Logged in successfully.");
-          handlePostAuthNavigation();
-        }
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) {
-          const normalizedMessage = error.message?.toLowerCase() || "";
-          if (normalizedMessage.includes("already") || normalizedMessage.includes("registered") || normalizedMessage.includes("exists")) {
-            setWarningMessage("Account already exists.");
-          } else {
-            setErrorMessage(error.message);
-          }
-        } else {
-          const hasExistingIdentity = data?.user?.identities?.length > 0;
-          if (!hasExistingIdentity) {
-            setWarningMessage("Account already exists.");
-            setIsLogin(true);
-            return;
-          }
-          if (data?.user && !data.user.email_confirmed_at) {
-            setWarningMessage("Please confirm your email to finish setting up your account.");
-            setIsLogin(true);
-            return;
-          }
-          setSuccessMessage("Account created. Set up your company profile.");
-          setShowCompanyForm(true);
-        }
-      }
-    } catch (error) {
-      setErrorMessage("Something went wrong. Please try again.");
-      console.error("Supabase auth error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOAuthLogin = async (provider) => {
-    setLoading(true);
-    setErrorMessage('');
-    setSuccessMessage('');
-    setWarningMessage('');
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/admin`,
-        },
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-      }
-    } catch (error) {
-      setErrorMessage('Unable to start OAuth sign-in.');
-      console.error('Supabase OAuth error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buildInitials = (name) => {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return "";
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  };
-
-  const handleCompanySubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMessage('');
-    setSuccessMessage('');
-
-    try {
-      const payload = {
-        name: companyName,
-        location: companyLocation,
-        initials: buildInitials(companyName),
-        description: companyDescription,
-      };
-
-      const response = await fetch("http://localhost:8000/api/companies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to create company.");
-      }
-
-      const result = await response.json();
-      const createdCompany = Array.isArray(result.response) ? result.response[0] : null;
-
-      if (!createdCompany?.id) {
-        throw new Error("Company created but no ID returned.");
-      }
-
-      localStorage.setItem('companyId', createdCompany.id);
-      setSuccessMessage("Company created.");
-      navigate('/dashboard');
-    } catch (error) {
-      setErrorMessage(error.message || "Failed to create company.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    if (resetCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResetCooldown((prev) => Math.max(prev - 1, 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resetCooldown]);
-
-  const handleForgotPassword = async () => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setWarningMessage('');
-
-    if (!email) {
-      setErrorMessage("Please enter your email first.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) {
-        setErrorMessage(error.message);
-      } else {
-        setSuccessMessage("Password reset email sent. Check your inbox.");
-        setResetCooldown(60);
-      }
-    } catch (error) {
-      setErrorMessage("Unable to send reset email. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const AuthShell = ({ children, showBack, onBack }) => (
+function AuthShell({ children, showBack, onBack }) {
+  return (
     <div className="min-h-screen bg-zinc-950 text-white">
       <div className="grid min-h-screen lg:grid-cols-[.75fr_1fr]">
         <div className="hidden lg:flex flex-col justify-between border-r border-white/10 bg-linear-to-b from-zinc-900 via-zinc-950 to-zinc-900 px-12 py-10">
@@ -277,6 +67,237 @@ function AdminLogin() {
       </div>
     </div>
   );
+}
+
+function AdminLogin() {
+  // Track whether the form is in login or signup mode
+  const [isLogin, setIsLogin] = useState(true);
+  
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [warningMessage, setWarningMessage] = useState('');
+  const [showCompanyForm, setShowCompanyForm] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [companyLocation, setCompanyLocation] = useState('');
+  const [companyDescription, setCompanyDescription] = useState('');
+  const [companyInitials, setCompanyInitials] = useState('');
+  const [resetCooldown, setResetCooldown] = useState(0);
+  
+  // Used for navigation
+  const navigate = useNavigate();
+
+  const handlePostAuthNavigation = useCallback((id) => {
+    if (!id) return;
+    const existingCompanyId = localStorage.getItem(getCompanyStorageKey(id));
+    if (existingCompanyId) {
+      navigate('/dashboard');
+      return;
+    }
+
+    setShowCompanyForm(true);
+  }, [navigate]);
+
+  React.useEffect(() => {
+    const syncSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('Unable to read Supabase session:', error);
+        return;
+      }
+
+      if (data?.session?.user) {
+        const currentUserId = data.session.user.id;
+        setUserId(currentUserId);
+        handlePostAuthNavigation(currentUserId);
+      }
+    };
+
+    syncSession();
+  }, [handlePostAuthNavigation]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    setWarningMessage('');
+
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+        } else if (data?.user && !data.user.email_confirmed_at) {
+          setWarningMessage("Please confirm your email before signing in.");
+        } else {
+          const currentUserId = data?.user?.id || '';
+          if (currentUserId) {
+            setUserId(currentUserId);
+          }
+          setSuccessMessage("Logged in successfully.");
+          handlePostAuthNavigation(currentUserId);
+        }
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) {
+          const normalizedMessage = error.message?.toLowerCase() || "";
+          if (normalizedMessage.includes("already") || normalizedMessage.includes("registered") || normalizedMessage.includes("exists")) {
+            setWarningMessage("Account already exists.");
+          } else {
+            setErrorMessage(error.message);
+          }
+        } else {
+          const hasExistingIdentity = data?.user?.identities?.length > 0;
+          if (!hasExistingIdentity) {
+            setWarningMessage("Account already exists.");
+            setIsLogin(true);
+            return;
+          }
+          if (data?.user && !data.user.email_confirmed_at) {
+            setWarningMessage("Please confirm your email to finish setting up your account.");
+            setIsLogin(true);
+            return;
+          }
+          const currentUserId = data?.user?.id || '';
+          if (currentUserId) {
+            setUserId(currentUserId);
+          }
+          setSuccessMessage("Account created. Set up your company profile.");
+          handlePostAuthNavigation(currentUserId);
+        }
+      }
+    } catch (error) {
+      setErrorMessage("Something went wrong. Please try again.");
+      console.error("Supabase auth error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthLogin = async (provider) => {
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    setWarningMessage('');
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+      }
+    } catch (error) {
+      setErrorMessage('Unable to start OAuth sign-in.');
+      console.error('Supabase OAuth error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buildInitials = (name) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
+  const handleCompanySubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      if (!userId) {
+        throw new Error("Unable to identify your account. Please log in again.");
+      }
+
+      const payload = {
+        name: companyName,
+        location: companyLocation,
+        initials: companyInitials || buildInitials(companyName),
+        description: companyDescription,
+      };
+
+      const response = await fetch("http://localhost:8000/api/companies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to create company.");
+      }
+
+      const result = await response.json();
+      const createdCompany = Array.isArray(result.response) ? result.response[0] : null;
+
+      if (!createdCompany?.id) {
+        throw new Error("Company created but no ID returned.");
+      }
+
+      localStorage.setItem(getCompanyStorageKey(userId), createdCompany.id);
+      setSuccessMessage("Company created.");
+      navigate('/dashboard');
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to create company.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (resetCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResetCooldown((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resetCooldown]);
+
+  const handleForgotPassword = async () => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    setWarningMessage('');
+
+    if (!email) {
+      setErrorMessage("Please enter your email first.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) {
+        setErrorMessage(error.message);
+      } else {
+        setSuccessMessage("Password reset email sent. Check your inbox.");
+        setResetCooldown(60);
+      }
+    } catch {
+      setErrorMessage("Unable to send reset email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (showCompanyForm) {
     return (
@@ -320,6 +341,17 @@ function AdminLogin() {
                 value={companyLocation}
                 onChange={(e) => setCompanyLocation(e.target.value)}
                 required
+                className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Initials</label>
+              <Input
+                type="text"
+                placeholder="TN"
+                value={companyInitials}
+                onChange={(e) => setCompanyInitials(e.target.value)}
+                maxLength={4}
                 className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500"
               />
             </div>
@@ -460,7 +492,7 @@ function AdminLogin() {
         </div>
 
         <div className="text-center text-sm text-zinc-400">
-          {isLogin ? "Don\'t have an account? " : "Already have an account? "}
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
             onClick={() => {
               setIsLogin(!isLogin);
