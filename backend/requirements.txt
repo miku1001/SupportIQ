@@ -3,6 +3,7 @@ uvicorn
 python-dotenv
 supabase
 PyPDF2
+python-multipart
 langchain-core
 langchain-openrouter
 langchain-text-splitters
