@@ -9,10 +9,15 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
 
-# 2. I-setup ang Hugging Face (Ito yung magko-convert ng words to numbers)
-# Note: Sa unang run, magda-download ito ng model file sa laptop mo kaya medyo matagal ng konti.
-print("Naghahanda ng AI Embedding model...")
-embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+_embeddings_model = None
+
+def get_embeddings_model():
+    global _embeddings_model
+    if _embeddings_model is None:
+        # Lazy load to avoid blocking app startup in hosting environments.
+        print("Loading AI Embedding model...")
+        _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    return _embeddings_model
 
 def normalize_text(text: str) -> str:
     # Light cleanup for PDF artifacts and excessive whitespace
@@ -30,7 +35,7 @@ def process_and_store_document(company_id: str, document_text: str, upload_id: s
     for chunk in chunks:
         print(f"Pino-proseso at isine-save: {chunk[:30]}...")
         
-        vector = embeddings_model.embed_query(chunk)
+        vector = get_embeddings_model().embed_query(chunk)
         
         payload = {
             "company_id": company_id,

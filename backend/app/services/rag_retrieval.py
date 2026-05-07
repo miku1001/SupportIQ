@@ -8,7 +8,15 @@ from openrouter import errors as openrouter_errors
 # from functools import lru_cache
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
-embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+_embeddings_model = None
+
+def get_embeddings_model():
+  global _embeddings_model
+  if _embeddings_model is None:
+    # Lazy load to avoid blocking app startup in hosting environments.
+    print("Loading AI Embedding model...")
+    _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+  return _embeddings_model
 
 model = ChatOpenRouter(
   model="gpt-4.1-mini",
@@ -23,7 +31,7 @@ model = ChatOpenRouter(
 def generate_response(company_id: str, user_message: str):
   print(f"User: {user_message}")
 
-  query_vector = embeddings_model.embed_query(user_message)
+  query_vector = get_embeddings_model().embed_query(user_message)
 
   try:
     response = supabase.rpc("match_documents_hybrid", {
