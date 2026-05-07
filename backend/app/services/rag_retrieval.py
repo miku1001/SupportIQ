@@ -1,6 +1,5 @@
 import os
 from supabase import create_client
-from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 import time
 from openrouter import errors as openrouter_errors
@@ -18,14 +17,22 @@ def get_embeddings_model():
     _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
   return _embeddings_model
 
-model = ChatOpenRouter(
-  model="gpt-4.1-mini",
-  temperature=0.4,          # keep answers natural but grounded
-  top_p=0.9,                # mas controlled kaysa top_k lang
-  max_completion_tokens=300,
-  frequency_penalty=0.2,    # iwas ulit-ulit
-  presence_penalty=0.0
-)
+_chat_model = None
+
+def get_chat_model():
+  global _chat_model
+  if _chat_model is None:
+    # Lazy load to avoid blocking app startup in hosting environments.
+    from langchain_openrouter import ChatOpenRouter
+    _chat_model = ChatOpenRouter(
+      model="gpt-4.1-mini",
+      temperature=0.4,          # keep answers natural but grounded
+      top_p=0.9,                # mas controlled kaysa top_k lang
+      max_completion_tokens=300,
+      frequency_penalty=0.2,    # iwas ulit-ulit
+      presence_penalty=0.0
+    )
+  return _chat_model
 
 # @lru_cache(maxsize=128)
 def generate_response(company_id: str, user_message: str):
@@ -77,7 +84,7 @@ def generate_response(company_id: str, user_message: str):
       ("user", "User Query: {question}")
     ])
 
-  chain = prompt_template | model
+  chain = prompt_template | get_chat_model()
 
   # Invoke model with retries/backoff for rate-limit (429) errors
   max_retries = 3
