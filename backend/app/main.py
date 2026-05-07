@@ -17,6 +17,8 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLEKEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+frontend_origins = os.getenv("FRONTEND_ORIGINS", "http://localhost:5173")
+allowed_origins = [origin.strip() for origin in frontend_origins.split(",") if origin.strip()]
 
 #create client
 supabase: Client = None
@@ -30,7 +32,7 @@ app.include_router(company_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+  allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"], # Payagan ang lahat (GET, POST, etc.)
     allow_headers=["*"], # Payagan ang lahat ng data

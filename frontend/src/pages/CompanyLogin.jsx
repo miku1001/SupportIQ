@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/lib/supabaseClient";
 
 const getCompanyStorageKey = (id) => `companyId:${id}`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 function AuthShell({ children, showBack, onBack, stats }) {
   return (
@@ -172,7 +173,7 @@ function AdminLogin() {
   React.useEffect(() => {
     const fetchCompanyCount = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/companies");
+        const response = await fetch(`${API_BASE}/api/companies`);
         if (!response.ok) {
           throw new Error("Failed to load company count.");
         }
@@ -311,7 +312,7 @@ function AdminLogin() {
         description: companyDescription,
       };
 
-      const response = await fetch("http://localhost:8000/api/companies", {
+      const response = await fetch(`${API_BASE}/api/companies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

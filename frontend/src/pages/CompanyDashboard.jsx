@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Building2, Moon, Sun } from "lucide-react";
 
 const getCompanyStorageKey = (id) => `companyId:${id}`;
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 function CompanyDashboard() {
   const [companyId, setCompanyId] = useState("");
@@ -28,7 +29,7 @@ function CompanyDashboard() {
   const fetchUploads = async (id) => {
     try {
       setUploadsLoading(true);
-      const response = await fetch(`http://localhost:8000/api/uploads?company_id=${id}`);
+      const response = await fetch(`${API_BASE}/api/uploads?company_id=${id}`);
       if (!response.ok) {
         throw new Error("Failed to load uploads.");
       }
@@ -43,7 +44,7 @@ function CompanyDashboard() {
 
   const fetchCompanyName = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/companies/${id}`);
+      const response = await fetch(`${API_BASE}/api/companies/${id}`);
       if (!response.ok) {
         throw new Error("Failed to load company details.");
       }
@@ -132,7 +133,7 @@ function CompanyDashboard() {
       formData.append("company_id", companyId);
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:8000/api/upload", {
+      const response = await fetch(`${API_BASE}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -159,7 +160,7 @@ function CompanyDashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/uploads/${uploadId}?company_id=${companyId}`,
+        `${API_BASE}/api/uploads/${uploadId}?company_id=${companyId}`,
         { method: "DELETE" }
       );
 

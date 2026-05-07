@@ -18,6 +18,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Send, Building2, MapPin, Menu, X, Moon, Sun } from "lucide-react";
 import './App.css'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
 // const MOCK_COMPANIES = [
 //   { id: "company_123", name: "TechNova Solutions", location: "Makati City", initials: "TN", description: "B2B Software provider and IT consulting services." },
 //   { id: "company_456", name: "GreenLeaf Organics", location: "Quezon City", initials: "GL", description: "Retailer of organic food and sustainable products." },
@@ -47,7 +49,7 @@ function ClientChat(){
       setCompaniesLoading(true);
       setCompaniesError("");
 
-      const response = await fetch("http://localhost:8000/api/companies");
+      const response = await fetch(`${API_BASE}/api/companies`);
       if (!response.ok) {
         throw new Error("Hindi ma-load ang listahan ng companies.");
       }
@@ -118,7 +120,7 @@ function ClientChat(){
 
     try {
       setIsSending(true);
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const response = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
