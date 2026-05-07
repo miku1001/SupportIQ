@@ -1,21 +1,39 @@
 import os
+import time
+import requests
 from supabase import create_client
 from langchain_core.prompts import ChatPromptTemplate
-import time
 from openrouter import errors as openrouter_errors
 # from functools import lru_cache
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
-_embeddings_model = None
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_EMBEDDING_MODEL = os.getenv("OPENROUTER_EMBEDDING_MODEL", "text-embedding-3-small")
+OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL")
+OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME")
 
-def get_embeddings_model():
-  global _embeddings_model
-  if _embeddings_model is None:
-    # Lazy load to avoid blocking app startup in hosting environments.
-    from langchain_huggingface import HuggingFaceEmbeddings
-    print("Loading AI Embedding model...")
-    _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-  return _embeddings_model
+def get_openrouter_embedding(text: str):
+  if not OPENROUTER_API_KEY:
+    raise RuntimeError("Missing OPENROUTER_API_KEY for embeddings.")
+
+  headers = {
+    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+    "Content-Type": "application/json",
+  }
+  if OPENROUTER_SITE_URL:
+    headers["HTTP-Referer"] = OPENROUTER_SITE_URL
+  if OPENROUTER_APP_NAME:
+    headers["X-Title"] = OPENROUTER_APP_NAME
+
+  payload = {
+    "model": OPENROUTER_EMBEDDING_MODEL,
+    "input": text,
+  }
+
+  response = requests.post("https://openrouter.ai/api/v1/embeddings", headers=headers, json=payload, timeout=30)
+  response.raise_for_status()
+  data = response.json()
+  return data["data"][0]["embedding"]
 
 _chat_model = None
 
@@ -38,7 +56,7 @@ def get_chat_model():
 def generate_response(company_id: str, user_message: str):
   print(f"User: {user_message}")
 
-  query_vector = get_embeddings_model().embed_query(user_message)
+  query_vector = get_openrouter_embedding(user_message)
 
   try:
     response = supabase.rpc("match_documents_hybrid", {

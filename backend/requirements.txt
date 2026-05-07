@@ -5,8 +5,7 @@ supabase
 PyPDF2
 langchain-core
 langchain-openrouter
-langchain-huggingface
 langchain-text-splitters
-sentence-transformers
 openrouter
+requests
 pydantic

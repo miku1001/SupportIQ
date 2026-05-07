@@ -2,22 +2,40 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import requests
 
 
 # 1. Buksan ang vault at kunin ang keys
 load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
 
-_embeddings_model = None
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_EMBEDDING_MODEL = os.getenv("OPENROUTER_EMBEDDING_MODEL", "text-embedding-3-small")
+OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL")
+OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME")
 
-def get_embeddings_model():
-    global _embeddings_model
-    if _embeddings_model is None:
-        # Lazy load to avoid blocking app startup in hosting environments.
-        from langchain_huggingface import HuggingFaceEmbeddings
-        print("Loading AI Embedding model...")
-        _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    return _embeddings_model
+def get_openrouter_embedding(text: str):
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError("Missing OPENROUTER_API_KEY for embeddings.")
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    if OPENROUTER_SITE_URL:
+        headers["HTTP-Referer"] = OPENROUTER_SITE_URL
+    if OPENROUTER_APP_NAME:
+        headers["X-Title"] = OPENROUTER_APP_NAME
+
+    payload = {
+        "model": OPENROUTER_EMBEDDING_MODEL,
+        "input": text,
+    }
+
+    response = requests.post("https://openrouter.ai/api/v1/embeddings", headers=headers, json=payload, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    return data["data"][0]["embedding"]
 
 def normalize_text(text: str) -> str:
     # Light cleanup for PDF artifacts and excessive whitespace
@@ -35,7 +53,7 @@ def process_and_store_document(company_id: str, document_text: str, upload_id: s
     for chunk in chunks:
         print(f"Pino-proseso at isine-save: {chunk[:30]}...")
         
-        vector = get_embeddings_model().embed_query(chunk)
+        vector = get_openrouter_embedding(chunk)
         
         payload = {
             "company_id": company_id,
