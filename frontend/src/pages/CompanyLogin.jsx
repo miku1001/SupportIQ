@@ -376,6 +376,34 @@ function AdminLogin() {
     }
   };
 
+  const handleSignOut = async () => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    setWarningMessage('');
+    setLoading(true);
+
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Supabase sign-out failed:', error);
+    } finally {
+      if (userId) {
+        localStorage.removeItem(getCompanyStorageKey(userId));
+        localStorage.removeItem(`pendingCompanySetup:${userId}`);
+        localStorage.removeItem(`companySetupDraft:${userId}`);
+      }
+      setUserId('');
+      setShowCompanyForm(false);
+      setCompanyName('');
+      setCompanyLocation('');
+      setCompanyDescription('');
+      setCompanyInitials('');
+      setIsLogin(true);
+      setLoading(false);
+      navigate('/admin');
+    }
+  };
+
   if (checkingSession) {
     return (
       <AuthShell showBack onBack={() => navigate('/')} stats={stats}>
@@ -390,6 +418,11 @@ function AdminLogin() {
     return (
       <AuthShell showBack onBack={() => navigate('/')} stats={stats}>
         <div className="space-y-8">
+          <div className="flex justify-end">
+            <Button type="button" variant="ghost" size="sm" onClick={handleSignOut} disabled={loading}>
+              Sign out
+            </Button>
+          </div>
           <div className="flex items-center gap-3 text-sm text-zinc-500">
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/40">1</span>
