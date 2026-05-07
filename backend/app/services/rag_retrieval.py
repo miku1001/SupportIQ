@@ -1,6 +1,5 @@
 import os
 from supabase import create_client
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openrouter import ChatOpenRouter
 from langchain_core.prompts import ChatPromptTemplate
 import time
@@ -14,6 +13,7 @@ def get_embeddings_model():
   global _embeddings_model
   if _embeddings_model is None:
     # Lazy load to avoid blocking app startup in hosting environments.
+    from langchain_huggingface import HuggingFaceEmbeddings
     print("Loading AI Embedding model...")
     _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
   return _embeddings_model
