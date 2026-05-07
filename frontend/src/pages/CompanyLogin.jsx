@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 const getCompanyStorageKey = (id) => `companyId:${id}`;
 
-function AuthShell({ children, showBack, onBack }) {
+function AuthShell({ children, showBack, onBack, stats }) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       <div className="grid min-h-screen lg:grid-cols-[.75fr_1fr]">
@@ -32,11 +32,7 @@ function AuthShell({ children, showBack, onBack }) {
 
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Companies", value: "4" },
-                { label: "Satisfaction", value: "98%" },
-                { label: "AI Support", value: "24/7" },
-              ].map((item) => (
+              {(stats || []).map((item) => (
                 <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-lg font-semibold text-white">{item.value}</p>
                   <p className="text-xs text-zinc-400">{item.label}</p>
@@ -87,6 +83,8 @@ function AdminLogin() {
   const [companyDescription, setCompanyDescription] = useState('');
   const [companyInitials, setCompanyInitials] = useState('');
   const [resetCooldown, setResetCooldown] = useState(0);
+  const [companyCount, setCompanyCount] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
   
   // Used for navigation
   const navigate = useNavigate();
@@ -104,21 +102,97 @@ function AdminLogin() {
 
   React.useEffect(() => {
     const syncSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Unable to read Supabase session:', error);
-        return;
-      }
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Unable to read Supabase session:', error);
+          return;
+        }
 
-      if (data?.session?.user) {
-        const currentUserId = data.session.user.id;
-        setUserId(currentUserId);
-        handlePostAuthNavigation(currentUserId);
+        if (data?.session?.user) {
+          const currentUserId = data.session.user.id;
+          setUserId(currentUserId);
+          handlePostAuthNavigation(currentUserId);
+        }
+      } finally {
+        setCheckingSession(false);
       }
     };
 
     syncSession();
   }, [handlePostAuthNavigation]);
+
+  React.useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== 'SIGNED_IN' || !session?.user) return;
+      const currentUserId = session.user.id;
+      setUserId(currentUserId);
+      handlePostAuthNavigation(currentUserId);
+      setCheckingSession(false);
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [handlePostAuthNavigation]);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    if (showCompanyForm) {
+      localStorage.setItem(`pendingCompanySetup:${userId}`, 'true');
+      const draft = {
+        companyName,
+        companyLocation,
+        companyDescription,
+        companyInitials,
+      };
+      localStorage.setItem(`companySetupDraft:${userId}`, JSON.stringify(draft));
+    }
+  }, [showCompanyForm, userId, companyName, companyLocation, companyDescription, companyInitials]);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    const hasPending = localStorage.getItem(`pendingCompanySetup:${userId}`) === 'true';
+    if (!hasPending) return;
+    const draft = localStorage.getItem(`companySetupDraft:${userId}`);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        setCompanyName(parsed.companyName || '');
+        setCompanyLocation(parsed.companyLocation || '');
+        setCompanyDescription(parsed.companyDescription || '');
+        setCompanyInitials(parsed.companyInitials || '');
+      } catch (error) {
+        console.error('Unable to restore company draft:', error);
+      }
+    }
+    setShowCompanyForm(true);
+  }, [userId]);
+
+  React.useEffect(() => {
+    const fetchCompanyCount = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/companies");
+        if (!response.ok) {
+          throw new Error("Failed to load company count.");
+        }
+        const data = await response.json();
+        const count = Array.isArray(data) ? data.length : 0;
+        setCompanyCount(count);
+      } catch (error) {
+        console.error("Error fetching company count:", error);
+        setCompanyCount(null);
+      }
+    };
+
+    fetchCompanyCount();
+  }, []);
+
+  const stats = [
+    { label: "Companies", value: companyCount === null ? "--" : String(companyCount) },
+    { label: "Satisfaction", value: "98%" },
+    { label: "AI Support", value: "24/7" },
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -256,6 +330,8 @@ function AdminLogin() {
       }
 
       localStorage.setItem(getCompanyStorageKey(userId), createdCompany.id);
+      localStorage.removeItem(`pendingCompanySetup:${userId}`);
+      localStorage.removeItem(`companySetupDraft:${userId}`);
       setSuccessMessage("Company created.");
       navigate('/dashboard');
     } catch (error) {
@@ -299,9 +375,19 @@ function AdminLogin() {
     }
   };
 
+  if (checkingSession) {
+    return (
+      <AuthShell showBack onBack={() => navigate('/')} stats={stats}>
+        <div className="flex items-center justify-center py-16 text-sm text-zinc-400">
+          Checking your session...
+        </div>
+      </AuthShell>
+    );
+  }
+
   if (showCompanyForm) {
     return (
-      <AuthShell showBack onBack={() => navigate('/')}>
+      <AuthShell showBack onBack={() => navigate('/')} stats={stats}>
         <div className="space-y-8">
           <div className="flex items-center gap-3 text-sm text-zinc-500">
             <div className="flex items-center gap-2">
@@ -386,12 +472,11 @@ function AdminLogin() {
     );
   }
 
-  return (
-    <AuthShell showBack onBack={() => navigate('/')}>
+    return (
+      <AuthShell showBack onBack={() => navigate('/')} stats={stats}>
       <div className="space-y-8">
         {isLogin ? (
           <div className="space-y-2">
-            <p className="text-xs font-semibold tracking-[0.2em] text-blue-400">ADMIN ACCESS</p>
             <h2 className="text-4xl font-semibold text-white">Welcome back.</h2>
             <p className="text-sm text-zinc-400">Sign in to manage your company AI assistant.</p>
           </div>

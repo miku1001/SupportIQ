@@ -161,7 +161,7 @@ function ClientChat(){
   }, [selectedCompany, chatHistoryByCompany])
 
   if (companiesLoading) {
-    return <div className="flex items-center justify-center h-screen">Kinukuha ang data sa Supabase...</div>;
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   if (companiesError) {
@@ -215,7 +215,7 @@ function ClientChat(){
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
           {/* 3. NILAGYAN NATIN NG onClick ANG ADMIN LOGIN BUTTON */}
-          <Button onClick={() => navigate('/admin')} variant="outline" size='sm'>Admin Login</Button>
+          <Button onClick={() => navigate('/admin')} variant="outline" size='sm'>Register your Company</Button>
         </div>
       </nav>
             

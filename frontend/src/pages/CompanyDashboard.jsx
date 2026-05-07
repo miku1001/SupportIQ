@@ -10,6 +10,8 @@ const getCompanyStorageKey = (id) => `companyId:${id}`;
 
 function CompanyDashboard() {
   const [companyId, setCompanyId] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -39,10 +41,25 @@ function CompanyDashboard() {
     }
   };
 
+  const fetchCompanyName = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/companies/${id}`);
+      if (!response.ok) {
+        throw new Error("Failed to load company details.");
+      }
+      const data = await response.json();
+      setCompanyName(data?.name || "");
+    } catch (error) {
+      setCompanyName("");
+      setErrorMessage(error.message || "Failed to load company details.");
+    }
+  };
+
   useEffect(() => {
     if (!companyId) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUploads(companyId);
+    fetchCompanyName(companyId);
   }, [companyId]);
 
   useEffect(() => {
@@ -57,19 +74,42 @@ function CompanyDashboard() {
 
   useEffect(() => {
     const syncUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data?.user) {
-        navigate("/admin");
-        return;
-      }
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data?.session?.user) {
+          navigate("/admin");
+          return;
+        }
 
-      const currentUserId = data.user.id;
-      const storedId = localStorage.getItem(getCompanyStorageKey(currentUserId)) || "";
-      setCompanyId(storedId);
+        const currentUserId = data.session.user.id;
+        const storedId = localStorage.getItem(getCompanyStorageKey(currentUserId)) || "";
+        if (!storedId) {
+          navigate("/admin");
+          return;
+        }
+        setCompanyId(storedId);
+      } finally {
+        setCheckingSession(false);
+      }
     };
 
     syncUser();
   }, [navigate]);
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN" || !session?.user) return;
+      const storedId = localStorage.getItem(getCompanyStorageKey(session.user.id)) || "";
+      if (storedId) {
+        setCompanyId(storedId);
+      }
+      setCheckingSession(false);
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -145,9 +185,15 @@ function CompanyDashboard() {
     navigate("/admin");
   };
 
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-[#f6f2ec] text-zinc-900 dark:bg-[#0f1117] dark:text-zinc-100" />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f6f2ec]">
-      <nav className="flex items-center justify-between px-4 md:px-20 py-4 h-14 bg-zinc-50 border border-zinc-400 dark:bg-zinc-900 dark:border-zinc-700">
+    <div className="min-h-screen bg-[#f6f2ec] text-zinc-900 dark:bg-[#0f1117] dark:text-zinc-100">
+      <nav className="flex items-center justify-between px-4 md:px-20 py-4 h-14 bg-zinc-50 border border-zinc-400 dark:bg-[#151822] dark:border-zinc-800">
         <div className="flex items-center gap-2">
           <Building2 className="w-6 h-6" />
           <span className="text-sm font-bold">SupportIQ</span>
@@ -166,13 +212,13 @@ function CompanyDashboard() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 pt-4 pb-8">
 
         <div className="rounded-2xl bg-gradient-to-r from-[#0b0d13] via-[#1b2a5b] to-[#1f3b8f] text-white px-6 py-6 shadow-lg">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold">Company Dashboard</h2>
-              <p className="text-sm text-white/80">Upload documents to train your AI assistant.</p>
+            <div className="flex flex-col items-start gap-1">
+              <h2 className="text-2xl font-semibold leading-tight">Company Dashboard</h2>
+              <p className="text-sm leading-snug text-white/80">Upload documents to train your AI assistant.</p>
             </div>
             <div className="text-right">
               <div className="text-4xl font-semibold leading-none">{uploads.length}</div>
@@ -182,26 +228,31 @@ function CompanyDashboard() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Card className="rounded-2xl border-zinc-200 shadow-sm">
+          <Card className="rounded-2xl border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-[#151822]">
             <CardHeader>
-              <CardTitle>File Upload</CardTitle>
-              <CardDescription>PDF or TXT files only · Max 10MB per file</CardDescription>
+              <CardTitle className="text-zinc-900 dark:text-zinc-100">File Upload</CardTitle>
+              <CardDescription className="text-zinc-500 dark:text-zinc-400">PDF or TXT files only · Max 10MB per file</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpload} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Company ID</label>
-                  <Input type="text" value={companyId} readOnly className="bg-zinc-50" />
+                  <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Company</label>
+                  <Input
+                    type="text"
+                    value={companyName || "Loading company..."}
+                    readOnly
+                    className="bg-zinc-50 text-zinc-900 dark:bg-[#0f1117] dark:text-zinc-100"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Choose File</label>
-                  <div className="rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center">
-                    <p className="text-sm font-medium text-zinc-900">Click to upload <span className="text-zinc-500">or drag and drop</span></p>
-                    <p className="mt-1 text-xs text-zinc-500">PDF or TXT files only</p>
+                  <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Choose File</label>
+                  <div className="rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-[#0f1117]">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Click to upload <span className="text-zinc-500 dark:text-zinc-400">or drag and drop</span></p>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">PDF or TXT files only</p>
                     <Input
                       type="file"
                       accept=".pdf,.txt"
-                      className="mt-4"
+                      className="mt-4 text-zinc-900 dark:text-zinc-100"
                       onChange={(e) => setFile(e.target.files?.[0] || null)}
                     />
                   </div>
@@ -217,32 +268,32 @@ function CompanyDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-zinc-200 shadow-sm">
+          <Card className="rounded-2xl border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-[#151822]">
             <CardHeader>
-              <CardTitle>Uploaded Files</CardTitle>
-              <CardDescription>Manage your uploaded documents.</CardDescription>
+              <CardTitle className="text-zinc-900 dark:text-zinc-100">Uploaded Files</CardTitle>
+              <CardDescription className="text-zinc-500 dark:text-zinc-400">Manage your uploaded documents.</CardDescription>
             </CardHeader>
             <CardContent>
               {uploadsLoading ? (
-                <p className="text-sm text-zinc-600">Loading uploads...</p>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading uploads...</p>
               ) : uploads.length === 0 ? (
-                <p className="text-sm text-zinc-600">No uploads yet.</p>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">No uploads yet.</p>
               ) : (
                 <div className="space-y-3">
                   {uploads.map((upload) => (
-                    <div key={upload.id} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-3 py-2">
+                    <div key={upload.id} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-[#0f1117]">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
                           <span className="text-xs font-semibold">PDF</span>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-zinc-900">{upload.filename}</p>
-                          <p className="text-xs text-zinc-500">{upload.created_at}</p>
+                          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{upload.filename}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">{upload.created_at}</p>
                         </div>
                       </div>
                       <Button
                         variant="outline"
-                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10"
                         onClick={() => handleDeleteUpload(upload.id)}
                       >
                         Delete

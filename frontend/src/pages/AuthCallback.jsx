@@ -10,6 +10,8 @@ function AuthCallback() {
     const handleOAuthCallback = async () => {
       const currentUrl = new URL(window.location.href);
       const code = currentUrl.searchParams.get('code');
+      const tokenHash = currentUrl.searchParams.get('token_hash');
+      const type = currentUrl.searchParams.get('type');
       const error = currentUrl.searchParams.get('error_description') || currentUrl.searchParams.get('error');
 
       if (error) {
@@ -17,7 +19,22 @@ function AuthCallback() {
         return;
       }
 
-      if (!code) {
+      if (!code && !(tokenHash && type)) {
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      if (tokenHash && type) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type,
+        });
+
+        if (verifyError) {
+          setMessage(verifyError.message || 'Unable to confirm email.');
+          return;
+        }
+
         navigate('/admin', { replace: true });
         return;
       }
