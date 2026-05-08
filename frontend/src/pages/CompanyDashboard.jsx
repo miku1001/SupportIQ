@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { Building2, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
 const getCompanyStorageKey = (id) => `companyId:${id}`;
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -196,7 +196,7 @@ function CompanyDashboard() {
     <div className="min-h-screen bg-[#f6f2ec] text-zinc-900 dark:bg-[#0f1117] dark:text-zinc-100">
       <nav className="flex items-center justify-between px-4 md:px-20 py-4 h-14 bg-zinc-50 border border-zinc-400 dark:bg-[#151822] dark:border-zinc-800">
         <div className="flex items-center gap-2">
-          <Building2 className="w-6 h-6" />
+          <img src="/favicon.svg" alt="SupportIQ Logo" className="w-6 h-6" />
           <span className="text-sm font-bold">SupportIQ</span>
         </div>
 

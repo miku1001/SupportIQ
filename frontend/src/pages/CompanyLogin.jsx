@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/lib/supabaseClient";
 
@@ -14,9 +13,7 @@ function AuthShell({ children, showBack, onBack, stats }) {
       <div className="grid min-h-screen lg:grid-cols-[.75fr_1fr]">
         <div className="hidden lg:flex flex-col justify-between border-r border-white/10 bg-linear-to-b from-zinc-900 via-zinc-950 to-zinc-900 px-12 py-10">
           <div className="flex items-center gap-3 text-white">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600/20 ring-1 ring-blue-500/40">
-              <Building2 className="h-5 w-5 text-blue-400" />
-            </div>
+            <img src="/favicon.svg" alt="SupportIQ Logo" className="h-11 w-11"/>
             <span className="text-lg font-semibold tracking-tight">SupportIQ</span>
           </div>
 
