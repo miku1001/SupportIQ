@@ -268,7 +268,7 @@ function ClientChat(){
           </ScrollArea>
         </div>
         
-        <div className="flex-1 min-h-0 h-full flex flex-col bg-zinc-100 dark:bg-zinc-900 md:h-[calc(100svh-4rem)] md:rounded-xl md:mr-3 md:w-11/20">
+        <div className="flex-1 min-h-0 h-[calc(100svh-4rem)] flex flex-col bg-zinc-100 dark:bg-zinc-900 md:rounded-xl md:mr-3 md:w-11/20">
           <div className="p-4 border-b border-zinc-400 dark:border-zinc-700 shrink-0 flex items-center gap-3 rounded-t-full">
              <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100 text-xs">{activeCompany.initials}</AvatarFallback>
@@ -303,7 +303,7 @@ function ClientChat(){
             </div>
           </ScrollArea>
 
-          <div className="p-4 bg-zinc-300 dark:bg-zinc-800 rounded-b-xl shrink-0">
+          <div className="mt-auto p-4 bg-zinc-300 dark:bg-zinc-800 rounded-b-xl shrink-0">
             <div className="w-full max-w-none md:max-w-3xl md:mx-auto flex items-center gap-2">
               <textarea
                 ref={textareaRef}
