@@ -90,12 +90,36 @@ function AdminLogin() {
   // Used for navigation
   const navigate = useNavigate();
 
-  const handlePostAuthNavigation = useCallback((id) => {
+  const handlePostAuthNavigation = useCallback(async (id) => {
     if (!id) return;
     const existingCompanyId = localStorage.getItem(getCompanyStorageKey(id));
     if (existingCompanyId) {
+      setShowCompanyForm(false);
       navigate('/dashboard');
       return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/companies/by-user/${id}`);
+      if (response.status === 404) {
+        setShowCompanyForm(true);
+        return;
+      }
+      if (!response.ok) {
+        throw new Error("Failed to load company data.");
+      }
+
+      const company = await response.json();
+      if (company?.id) {
+        localStorage.setItem(getCompanyStorageKey(id), company.id);
+        localStorage.removeItem(`pendingCompanySetup:${id}`);
+        localStorage.removeItem(`companySetupDraft:${id}`);
+        setShowCompanyForm(false);
+        navigate('/dashboard');
+        return;
+      }
+    } catch (error) {
+      console.error("Error fetching company by user:", error);
     }
 
     setShowCompanyForm(true);
@@ -113,7 +137,7 @@ function AdminLogin() {
         if (data?.session?.user) {
           const currentUserId = data.session.user.id;
           setUserId(currentUserId);
-          handlePostAuthNavigation(currentUserId);
+          void handlePostAuthNavigation(currentUserId);
         }
       } finally {
         setCheckingSession(false);
@@ -128,7 +152,7 @@ function AdminLogin() {
       if (event !== 'SIGNED_IN' || !session?.user) return;
       const currentUserId = session.user.id;
       setUserId(currentUserId);
-      handlePostAuthNavigation(currentUserId);
+      void handlePostAuthNavigation(currentUserId);
       setCheckingSession(false);
     });
 
@@ -219,7 +243,7 @@ function AdminLogin() {
             setUserId(currentUserId);
           }
           setSuccessMessage("Logged in successfully.");
-          handlePostAuthNavigation(currentUserId);
+          void handlePostAuthNavigation(currentUserId);
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -251,7 +275,7 @@ function AdminLogin() {
             setUserId(currentUserId);
           }
           setSuccessMessage("Account created. Set up your company profile.");
-          handlePostAuthNavigation(currentUserId);
+          void handlePostAuthNavigation(currentUserId);
         }
       }
     } catch (error) {
@@ -306,6 +330,7 @@ function AdminLogin() {
       }
 
       const payload = {
+        user_id: userId,
         name: companyName,
         location: companyLocation,
         initials: companyInitials || buildInitials(companyName),

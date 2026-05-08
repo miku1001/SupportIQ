@@ -12,6 +12,7 @@ supabase = create_client(
 
 class CompanyPayload(BaseModel):
     id: Optional[str] = None  # e.g., "company_789"
+    user_id: Optional[str] = None
     name: str                 # e.g., "FastBurger"
     location: str             # e.g., "Manila"
     initials: str             # e.g., "FB"
@@ -99,5 +100,27 @@ def delete_company(company_id: str):
             'message': f'Company {company_id} deleted!'
         }
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/companies/by-user/{user_id}")
+def get_company_by_user(user_id: str):
+    try:
+        response = (
+            supabase.table("companies")
+            .select('*')
+            .eq('user_id', user_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Company not found")
+
+        return response.data[0]
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
