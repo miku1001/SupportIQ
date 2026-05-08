@@ -218,7 +218,7 @@ function CompanyDashboard() {
         <div className="rounded-2xl bg-gradient-to-r from-[#0b0d13] via-[#1b2a5b] to-[#1f3b8f] text-white px-6 py-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex flex-col items-start gap-1">
-              <h2 className="text-2xl font-semibold leading-tight">Company Dashboard</h2>
+              <h2 className="text-2xl font-semibold leading-tight text-white/80">Company Dashboard</h2>
               <p className="text-sm leading-snug text-white/80">Upload documents to train your AI assistant.</p>
             </div>
             <div className="text-right">
