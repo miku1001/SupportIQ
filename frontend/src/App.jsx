@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Building2, MapPin, Menu, X, Moon, Sun } from "lucide-react";
+import { Send, MapPin, Menu, X, Moon, Sun } from "lucide-react";
 import './App.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -203,7 +203,7 @@ function ClientChat(){
           >
             {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </Button>
-          <Building2 className="w-6 h-6"/>
+          <img src="/favicon.svg" alt="SupportIQ Logo" className="w-6 h-6"/>
           <span className="text-sm font-bold">SupportIQ</span>
         </div>
 
