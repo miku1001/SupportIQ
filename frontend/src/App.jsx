@@ -191,7 +191,7 @@ function ClientChat(){
   }
 
   return (
-    <div className = "flex flex-col h-screen bg-zinc-200 dark:bg-zinc-950">
+    <div className = "flex flex-col min-h-[100svh] bg-zinc-200 dark:bg-zinc-950">
       {/* navbar */}
       <nav className="flex items-center justify-between px-4 md:px-20 py-4 mb-2 h-14 bg-zinc-50 border border-zinc-400 dark:bg-zinc-900 dark:border-zinc-700">
         <div className="flex items-center gap-2">
@@ -222,7 +222,7 @@ function ClientChat(){
       </nav>
             
       {/* MAIN CONTENT */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {sidebarOpen && (
           <div 
             className="fixed inset-0 top-14 bg-black/30 md:hidden z-30"
@@ -230,7 +230,7 @@ function ClientChat(){
           />
         )}
 
-        <div className={`fixed md:relative left-0 top-14 md:top-auto bottom-0 w-64 md:w-1/5 md:h-[88vh] md:ml-3 md:mr-3 flex flex-col bg-zinc-50 dark:bg-zinc-900 rounded-xl overflow-hidden z-40 transition-transform md:translate-x-0 ${
+        <div className={`fixed md:relative left-0 top-14 md:top-auto bottom-0 w-64 md:w-1/5 md:h-[calc(100svh-4rem)] md:ml-3 md:mr-3 flex flex-col bg-zinc-50 dark:bg-zinc-900 rounded-xl overflow-hidden z-40 transition-transform md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <ScrollArea className="flex-1 h-full">
@@ -268,7 +268,7 @@ function ClientChat(){
           </ScrollArea>
         </div>
         
-        <div className="flex-1 h-full flex flex-col bg-zinc-100 dark:bg-zinc-900 md:h-[88vh] md:rounded-xl md:mr-3 md:w-11/20">
+        <div className="flex-1 min-h-0 h-full flex flex-col bg-zinc-100 dark:bg-zinc-900 md:h-[calc(100svh-4rem)] md:rounded-xl md:mr-3 md:w-11/20">
           <div className="p-4 border-b border-zinc-400 dark:border-zinc-700 shrink-0 flex items-center gap-3 rounded-t-full">
              <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100 text-xs">{activeCompany.initials}</AvatarFallback>
@@ -278,8 +278,8 @@ function ClientChat(){
              </div>
           </div>
 
-          <ScrollArea className="flex-1 p-4 overflow-hidden">
-            <div className="space-y-4 max-w-3xl">
+          <ScrollArea className="flex-1 min-h-0 p-4 overflow-hidden">
+            <div className="space-y-4 max-w-3xl w-full">
               {selectedCompany ? (
                 (chatHistoryByCompany[selectedCompany.id] || [defaultGreeting]).map((chat, idx) => (
                   <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -325,7 +325,7 @@ function ClientChat(){
           </div>
         </div>
         
-        <div className="h-[88vh] w-1/4 bg-zinc-50 dark:bg-zinc-900 p-6 hidden lg:block rounded-xl">
+        <div className="h-[calc(100svh-4rem)] w-1/4 bg-zinc-50 dark:bg-zinc-900 p-6 hidden lg:block rounded-xl">
             {!selectedCompany ? (
               <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-300 text-center">
                 <p>No companies available.</p>
