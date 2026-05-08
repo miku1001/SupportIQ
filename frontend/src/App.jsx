@@ -279,7 +279,7 @@ function ClientChat(){
           </div>
 
           <ScrollArea className="flex-1 min-h-0 p-4 overflow-hidden">
-            <div className="space-y-4 max-w-3xl w-full">
+            <div className="space-y-4 w-full max-w-none md:max-w-3xl md:mx-auto">
               {selectedCompany ? (
                 (chatHistoryByCompany[selectedCompany.id] || [defaultGreeting]).map((chat, idx) => (
                   <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -304,7 +304,7 @@ function ClientChat(){
           </ScrollArea>
 
           <div className="p-4 bg-zinc-300 dark:bg-zinc-800 rounded-b-xl shrink-0">
-            <div className="max-w-3xl flex items-center gap-2">
+            <div className="w-full max-w-none md:max-w-3xl md:mx-auto flex items-center gap-2">
               <textarea
                 ref={textareaRef}
                 value={message}
