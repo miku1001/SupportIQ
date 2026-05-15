@@ -44,10 +44,10 @@ def get_chat_model():
     from langchain_openrouter import ChatOpenRouter
     _chat_model = ChatOpenRouter(
       model="gpt-4.1-mini",
-      temperature=0.4,          # keep answers natural but grounded
-      top_p=0.9,                # mas controlled kaysa top_k lang
+      temperature=0.4,       
+      top_p=0.9,              
       max_completion_tokens=300,
-      frequency_penalty=0.2,    # iwas ulit-ulit
+      frequency_penalty=0.2,
       presence_penalty=0.0
     )
   return _chat_model
@@ -69,7 +69,7 @@ def generate_response(company_id: str, user_message: str):
   except Exception:
     response = supabase.rpc("match_documents", {
           "query_embedding": query_vector,
-          "match_threshold": 0.3, # Gaano ka-strict (0 to 1). 0.3 is good for basic matching.
+          "match_threshold": 0.3, 
           "match_count": 10,
           "p_company_id": company_id
       }).execute()

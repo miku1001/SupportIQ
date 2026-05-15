@@ -5,7 +5,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 import requests
 
 
-# 1. Buksan ang vault at kunin ang keys
 load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
 
