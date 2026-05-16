@@ -2,7 +2,7 @@ import os
 import time
 import requests
 from supabase import create_client
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from openrouter import errors as openrouter_errors
 # from functools import lru_cache
 
@@ -53,7 +53,7 @@ def get_chat_model():
   return _chat_model
 
 # @lru_cache(maxsize=128)
-def generate_response(company_id: str, user_message: str):
+def generate_response(company_id: str, user_message: str, history=None):
   print(f"User: {user_message}")
 
   query_vector = get_openrouter_embedding(user_message)
@@ -99,6 +99,7 @@ def generate_response(company_id: str, user_message: str):
   </context>
 
   You are NOT a general assistant. You are NOT a calculator. You are NOT a summarizer."""),
+      MessagesPlaceholder("history"),
       ("user", "User Query: {question}")
     ])
 
@@ -111,7 +112,8 @@ def generate_response(company_id: str, user_message: str):
     try:
       ai_response = chain.invoke({
         "context": context,
-        "question": user_message
+        "question": user_message,
+        "history": history or []
       })
       return ai_response.content
     except openrouter_errors.TooManyRequestsResponseError:
