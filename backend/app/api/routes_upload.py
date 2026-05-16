@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
 from supabase import create_client
 from app.services.rag_ingest import process_and_store_document
+from app.services.rate_limit import allow
 
 load_dotenv()
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
@@ -48,6 +49,11 @@ def delete_upload(upload_id: str, company_id: str = Query(...)):
 
 @router.post("/api/upload")
 async def upload_document(company_id: str = Form(...), file: UploadFile = File(...)):
+  key = f"upload:company:{company_id}"
+
+  if not allow(key, max_req=5, window_seconds=60):
+    raise HTTPException(status_code=429, detail="Upload rate limit exceeded.")
+
   print(f"file accepted from {company_id}, {file.filename}")
 
   extracted_text = ""
