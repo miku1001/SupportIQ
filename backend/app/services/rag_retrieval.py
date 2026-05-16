@@ -53,15 +53,28 @@ def get_chat_model():
   return _chat_model
 
 # @lru_cache(maxsize=128)
+def _get_last_user_message(history):
+  for message in reversed(history):
+    if message.get("role") == "user" and message.get("content"):
+      return message["content"]
+  return None
+
+
 def generate_response(company_id: str, user_message: str, history=None):
   print(f"User: {user_message}")
 
-  query_vector = get_openrouter_embedding(user_message)
+  history = history or []
+  last_user_message = _get_last_user_message(history)
+  search_query = user_message
+  if last_user_message and user_message:
+    search_query = f"{last_user_message}\nFollow-up: {user_message}"
+
+  query_vector = get_openrouter_embedding(search_query)
 
   try:
     response = supabase.rpc("match_documents_hybrid", {
           "query_embedding": query_vector,
-          "query_text": user_message,
+          "query_text": search_query,
           "match_threshold": 0.25,
           "match_count": 12,
           "p_company_id": company_id
@@ -113,7 +126,7 @@ def generate_response(company_id: str, user_message: str, history=None):
       ai_response = chain.invoke({
         "context": context,
         "question": user_message,
-        "history": history or []
+        "history": history
       })
       return ai_response.content
     except openrouter_errors.TooManyRequestsResponseError:
