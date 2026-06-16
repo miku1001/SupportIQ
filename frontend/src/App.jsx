@@ -20,6 +20,13 @@ import './App.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+const SUGGESTED_QUESTIONS = [
+  "What are your business hours?",
+  "Where are you located?",
+  "What services do you offer?",
+  "How can I contact you?",
+];
+
 // const MOCK_COMPANIES = [
 //   { id: "company_123", name: "TechNova Solutions", location: "Makati City", initials: "TN", description: "B2B Software provider and IT consulting services." },
 //   { id: "company_456", name: "GreenLeaf Organics", location: "Quezon City", initials: "GL", description: "Retailer of organic food and sustainable products." },
@@ -98,10 +105,10 @@ function ClientChat(){
   const textareaRef = React.useRef(null)
   const chatEndRef = React.useRef(null)
 
-  const handleSendMessages = async () => {
-    if (!message.trim() || !selectedCompany || isSending) return;
+  const handleSendMessages = async (overrideText) => {
+    const outgoing = (typeof overrideText === "string" ? overrideText : message).trim();
+    if (!outgoing || !selectedCompany || isSending) return;
 
-    const outgoing = message;
     setChatHistoryByCompany((prev) => {
       const companyId = selectedCompany.id;
       const history = prev[companyId] || [defaultGreeting];
@@ -160,7 +167,7 @@ function ClientChat(){
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [selectedCompany, chatHistoryByCompany])
+  }, [selectedCompany, chatHistoryByCompany, isSending])
 
   if (companiesLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -189,6 +196,14 @@ function ClientChat(){
       handleSendMessages()
     }
   }
+
+  const currentHistory = selectedCompany
+    ? (chatHistoryByCompany[selectedCompany.id] || [defaultGreeting])
+    : [];
+  const showSuggestions =
+    !!selectedCompany &&
+    !isSending &&
+    !currentHistory.some((chat) => chat.sender === "user");
 
   return (
     <div className = "flex flex-col min-h-[100svh] bg-zinc-200 dark:bg-zinc-950">
@@ -299,28 +314,55 @@ function ClientChat(){
                   </div>
                 </div>
               )}
+              {isSending && selectedCompany && (
+                <div className="flex justify-start">
+                  <div className="max-w-sm rounded-2xl rounded-bl-none bg-zinc-200 px-4 py-3 shadow-md dark:bg-zinc-800">
+                    <div className="flex items-center gap-1">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 dark:bg-zinc-400 [animation-delay:-0.3s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 dark:bg-zinc-400 [animation-delay:-0.15s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-500 dark:bg-zinc-400" />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={chatEndRef} />
             </div>
           </ScrollArea>
 
           <div className="mt-auto p-4 bg-zinc-300 dark:bg-zinc-800 rounded-b-xl shrink-0">
-            <div className="w-full max-w-none md:max-w-3xl md:mx-auto flex items-center gap-2">
-              <textarea
-                ref={textareaRef}
-                value={message}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message here.. (Shift+Enter for newline)"
-                className="px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-100 w-full  max-h-50 h-auto resize-none overflow-hidden border border-transparent focus:border-black dark:focus:border-zinc-500 focus:outline-none focus:ring-0 py-1"
-              />
-              <Button
-                onClick={handleSendMessages}
-                size="icon"
-                className="rounded-full flex items-center justify-center w-10 h-10 p-2"
-                disabled={isSending || !selectedCompany}
-              >
-                <Send className="w-6 h-6 block" />
-              </Button>
+            <div className="w-full max-w-none md:max-w-3xl md:mx-auto">
+              {showSuggestions && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {SUGGESTED_QUESTIONS.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => handleSendMessages(question)}
+                      className="rounded-full border border-zinc-400 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-blue-900/40 dark:hover:text-blue-100"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message here.. (Shift+Enter for newline)"
+                  className="px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-100 w-full  max-h-50 h-auto resize-none overflow-hidden border border-transparent focus:border-black dark:focus:border-zinc-500 focus:outline-none focus:ring-0 py-1"
+                />
+                <Button
+                  onClick={() => handleSendMessages()}
+                  size="icon"
+                  className="rounded-full flex items-center justify-center w-10 h-10 p-2"
+                  disabled={isSending || !selectedCompany}
+                >
+                  <Send className="w-6 h-6 block" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
