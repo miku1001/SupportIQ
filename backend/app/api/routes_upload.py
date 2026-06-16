@@ -89,6 +89,15 @@ async def upload_document(company_id: str = Form(...), file: UploadFile = File(.
     print("Passing text for ingestion///")
     result = process_and_store_document(company_id, extracted_text, upload_id, file.filename)
 
+    # Bagong docs = luma na ang dating suggested questions. I-invalidate ang cache
+    # para mag-regenerate (mula sa bagong docs) sa susunod na chat load.
+    try:
+      supabase.table("companies").update(
+        {"suggested_questions": None}
+      ).eq("id", company_id).execute()
+    except Exception as e:
+      print(f"Suggested-questions cache invalidation failed: {e}")
+
     return {
       "status": "success",
       "filename": file.filename,

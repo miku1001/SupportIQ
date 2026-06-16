@@ -205,3 +205,34 @@ def generate_suggested_questions(company_id: str):
 
   except Exception:
     return DEFAULT_QUESTIONS
+
+
+def get_suggested_questions(company_id: str):
+  """Cache-or-generate: basahin sa DB; kung wala pa, mag-generate (LLM) at i-save.
+  Returns dict: {"questions": [...], "cache": "hit" | "miss"}."""
+  # 1. Subukang basahin sa cache (companies.suggested_questions)
+  try:
+    res = (
+      supabase.table("companies")
+      .select("suggested_questions")
+      .eq("id", company_id)
+      .limit(1)
+      .execute()
+    )
+    cached = res.data[0]["suggested_questions"] if res.data else None
+  except Exception:
+    cached = None  # baka wala pa ang column; mag-generate na lang nang live
+
+  if cached:
+    return {"questions": cached, "cache": "hit"}
+
+  # 2. Cache miss -> generate (LLM) tapos i-save para mabilis na sa susunod
+  questions = generate_suggested_questions(company_id)
+  try:
+    supabase.table("companies").update(
+      {"suggested_questions": questions}
+    ).eq("id", company_id).execute()
+  except Exception as e:
+    print(f"Cache save failed: {e}")  # 'wag i-block ang sagot
+
+  return {"questions": questions, "cache": "miss"}
