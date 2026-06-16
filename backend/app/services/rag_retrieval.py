@@ -141,8 +141,7 @@ def generate_response(company_id: str, user_message: str, history=None):
   
 def _safe_parse_questions(raw: str) -> str:
   try:
-    response = generate_suggested_questions()
-    items = response.split(",")
+    items = raw.split(",")
     return items
   except Exception:
     return []
@@ -156,7 +155,7 @@ DEFAULT_QUESTIONS = [
 ]
 def generate_suggested_questions(company_id: str) -> str:
   try:
-    response = (supabase.table("document_chunks").select("content").eq("company_id", company_id).limit(25).execute)
+    response = (supabase.table("document_chunks").select("content").eq("company_id", company_id).limit(25).execute())
   except Exception:
     return DEFAULT_QUESTIONS
   

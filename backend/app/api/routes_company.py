@@ -134,6 +134,6 @@ def get_company_by_user(user_id: str):
 def suggested_questions(company_id: str) ->str:
     try:
         questions = generate_suggested_questions(company_id)
-        return questions
+        return {"questions":questions}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
