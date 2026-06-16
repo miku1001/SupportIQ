@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from supabase import create_client
+from app.services.rag_retrieval import generate_suggested_questions
 
 router = APIRouter()
 supabase = create_client(
@@ -126,5 +127,13 @@ def get_company_by_user(user_id: str):
 
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get('/api/companies/{company_id}/suggested-questions')
+def suggested_questions(company_id: str) ->str:
+    try:
+        questions = generate_suggested_questions(company_id)
+        return questions
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -50,6 +50,31 @@ function ClientChat(){
 
   const [chatHistoryByCompany, setChatHistoryByCompany] = useState({});
   const defaultGreeting = { sender: "ai", text: "Hi! how can I help you?" };
+  const [suggestionsByCompany, setSuggestionsByCompany] = useState({});
+  useEffect(() => {
+    if (!selectedCompany) return;
+    const companyId = selectedCompany.id;
+    if (suggestionsByCompany[companyId]) return; // na-fetch na, 'wag ulitin
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/companies/${companyId}/suggested-questions`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.questions)) {
+          setSuggestionsByCompany((prev) => ({ ...prev, [companyId]: data.questions }));
+        }
+      } catch (err) {
+        console.error("Suggested questions error:", err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [selectedCompany]);
+
 
   const fetchCompanies = async () => {
     try {
@@ -197,6 +222,8 @@ function ClientChat(){
     }
   }
 
+  const currentSuggestions =
+  (selectedCompany && suggestionsByCompany[selectedCompany.id]) || SUGGESTED_QUESTIONS;
   const currentHistory = selectedCompany
     ? (chatHistoryByCompany[selectedCompany.id] || [defaultGreeting])
     : [];
@@ -332,7 +359,7 @@ function ClientChat(){
           {showSuggestions && (
             <div className="px-4 pb-2 shrink-0">
               <div className="w-full max-w-none md:max-w-3xl md:mx-auto flex flex-wrap gap-2">
-                {SUGGESTED_QUESTIONS.map((question) => (
+                {currentSuggestions.map((question) => (
                   <button
                     key={question}
                     type="button"

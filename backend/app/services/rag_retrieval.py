@@ -4,6 +4,7 @@ import requests
 from supabase import create_client
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from openrouter import errors as openrouter_errors
+import json
 # from functools import lru_cache
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLEKEY"))
@@ -137,3 +138,61 @@ def generate_response(company_id: str, user_message: str, history=None):
       return "Provider rate limit reached; please try again later."
     except Exception as e:
       return f"AI error: {e}"
+  
+def _safe_parse_questions(raw: str) -> str:
+  try:
+    response = generate_suggested_questions()
+    items = response.split(",")
+    return items
+  except Exception:
+    return []
+
+#Fallback
+DEFAULT_QUESTIONS = [
+    "What services do you offer?",
+    "What are your business hours?",
+    "Where are you located?",
+    "How can I contact you?",
+]
+def generate_suggested_questions(company_id: str) -> str:
+  try:
+    response = (supabase.table("document_chunks").select("content").eq("company_id", company_id).limit(25).execute)
+  except Exception:
+    return DEFAULT_QUESTIONS
+  
+  chunks = response.data or []
+  if not chunks:
+    return DEFAULT_QUESTIONS
+  
+  context = "\n\n".join(c["content"] for c in chunks)
+
+
+  prompt_template = ChatPromptTemplate.from_messages([
+    ("system", """You generate starter questions for a company's support chatbot.
+
+  Based ONLY on the provided company documents, write the 4 most useful questions a
+  customer would likely ask AND that can be confidently answered from these documents.
+
+  RULES:
+  - Output ONLY a array with comma seperated of exactly 4 short question strings. No extra text, no markdown.
+  - Each question MUST be answerable from the context below.
+  - Keep each question under 8 words, natural and customer-facing.
+  - Write the questions in English.
+
+  Example output:
+  "What are your opening hours?", "Do you offer delivery?", "Where are you located?", "What payment methods do you accept?"
+
+  <context>
+  {context}
+  </context>"""),
+    ])
+  
+  chain = prompt_template | get_chat_model()
+
+  try:
+    ai_response = chain.invoke({"context": context})
+    questions= _safe_parse_questions(ai_response.content)
+    return questions
+
+  except Exception:
+    return DEFAULT_QUESTIONS
