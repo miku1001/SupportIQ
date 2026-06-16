@@ -61,6 +61,11 @@ def _get_last_user_message(history):
   return None
 
 
+# Eksaktong sagot kapag walang nahanap sa docs. DAPAT identical sa nasa system prompt
+# sa baba, para tama ang pag-classify ng "answered vs fallback" sa metric.
+FALLBACK_MESSAGE = "Sorry, I don't have exact info to your inquiries."
+
+
 def generate_response(company_id: str, user_message: str, history=None):
   print(f"User: {user_message}")
 
@@ -90,10 +95,8 @@ def generate_response(company_id: str, user_message: str, history=None):
 
   found_text = response.data
 
-  fallback_message = "Sorry, I don't have exact info to your inquiries."
-
   if not found_text:
-    return fallback_message
+    return FALLBACK_MESSAGE
 
   context = "\n\n".join(doc["content"] for doc in found_text)
   
