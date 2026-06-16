@@ -139,12 +139,22 @@ def generate_response(company_id: str, user_message: str, history=None):
     except Exception as e:
       return f"AI error: {e}"
   
-def _safe_parse_questions(raw: str) -> str:
-  try:
-    items = raw.split(",")
-    return items
-  except Exception:
+def _safe_parse_questions(raw: str):
+  """Kunin ang list ng questions mula sa LLM text. Robust sa JSON array o comma-separated."""
+  if not raw:
     return []
+  # Subukan muna bilang JSON array: ["...", "...", ...]
+  try:
+    start = raw.find("[")
+    end = raw.rfind("]")
+    if start != -1 and end != -1:
+      items = json.loads(raw[start:end + 1])
+      return [str(q).strip() for q in items if str(q).strip()][:4]
+  except Exception:
+    pass
+  # Fallback: comma-separated; alisin ang brackets at quotes sa bawat item
+  parts = [p.strip().strip("[]").strip().strip('"').strip("'") for p in raw.split(",")]
+  return [p for p in parts if p][:4]
 
 #Fallback
 DEFAULT_QUESTIONS = [
@@ -153,7 +163,7 @@ DEFAULT_QUESTIONS = [
     "Where are you located?",
     "How can I contact you?",
 ]
-def generate_suggested_questions(company_id: str) -> str:
+def generate_suggested_questions(company_id: str):
   try:
     response = (supabase.table("document_chunks").select("content").eq("company_id", company_id).limit(25).execute())
   except Exception:

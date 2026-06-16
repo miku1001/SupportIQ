@@ -131,7 +131,7 @@ def get_company_by_user(user_id: str):
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get('/api/companies/{company_id}/suggested-questions')
-def suggested_questions(company_id: str) ->str:
+def suggested_questions(company_id: str):
     try:
         questions = generate_suggested_questions(company_id)
         return {"questions":questions}
