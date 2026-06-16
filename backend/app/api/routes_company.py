@@ -10,6 +10,10 @@ supabase = create_client(
     os.getenv("SUPABASE_SERVICE_ROLEKEY")
 )
 
+# Columns safe to expose on public, unauthenticated endpoints.
+# Never include user_id or other internal fields here.
+PUBLIC_COMPANY_FIELDS = "id, name, location, initials, description"
+
 class CompanyPayload(BaseModel):
     id: Optional[str] = None  # e.g., "company_789"
     user_id: Optional[str] = None
@@ -22,7 +26,7 @@ class CompanyPayload(BaseModel):
 @router.get("/api/companies")
 def get_companies():
     try:
-        response = supabase.table("companies").select('*').execute()
+        response = supabase.table("companies").select(PUBLIC_COMPANY_FIELDS).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
