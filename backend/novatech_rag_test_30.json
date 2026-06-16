@@ -1,0 +1,212 @@
+[
+  {
+    "id": 1,
+    "question": "How many business days does standard shipping take within Metro Manila?",
+    "expected_answer": "3 to 5 business days.",
+    "category": "direct",
+    "source": "Shipping Policy"
+  },
+  {
+    "id": 2,
+    "question": "How long is the warranty for laptops?",
+    "expected_answer": "2-year limited warranty.",
+    "category": "direct",
+    "source": "Warranty Information"
+  },
+  {
+    "id": 3,
+    "question": "What is the warranty period for keyboards and mice?",
+    "expected_answer": "6 months.",
+    "category": "direct",
+    "source": "Warranty Information"
+  },
+  {
+    "id": 4,
+    "question": "What is the minimum order value to qualify for free shipping?",
+    "expected_answer": "Orders above PHP 3,000.",
+    "category": "direct",
+    "source": "Shipping Policy"
+  },
+  {
+    "id": 5,
+    "question": "Within how many days can a customer request a return?",
+    "expected_answer": "Within 7 days after receiving the item.",
+    "category": "direct",
+    "source": "Return and Refund Policy"
+  },
+  {
+    "id": 6,
+    "question": "How long does refund processing take after inspection?",
+    "expected_answer": "5 to 7 business days.",
+    "category": "direct",
+    "source": "Return and Refund Policy"
+  },
+  {
+    "id": 7,
+    "question": "What are the customer support operating hours?",
+    "expected_answer": "Monday to Saturday, 8:00 AM to 6:00 PM Philippine Time.",
+    "category": "direct",
+    "source": "Store Hours and Contact Information"
+  },
+  {
+    "id": 8,
+    "question": "What is the support hotline number?",
+    "expected_answer": "+63 912 345 6789.",
+    "category": "direct",
+    "source": "Store Hours and Contact Information"
+  },
+  {
+    "id": 9,
+    "question": "How long does express shipping usually take?",
+    "expected_answer": "1 to 2 business days.",
+    "category": "direct",
+    "source": "Shipping Policy"
+  },
+  {
+    "id": 10,
+    "question": "What is the minimum purchase amount to be eligible for installment plans?",
+    "expected_answer": "Above PHP 10,000 (using supported credit cards).",
+    "category": "direct",
+    "source": "Payment Methods"
+  },
+  {
+    "id": 11,
+    "question": "I live in a provincial area — how soon will my order arrive?",
+    "expected_answer": "5 to 10 business days.",
+    "category": "paraphrase",
+    "source": "Shipping Policy"
+  },
+  {
+    "id": 12,
+    "question": "Can I get a refund on software that I already opened?",
+    "expected_answer": "No. Opened software products are non-refundable.",
+    "category": "paraphrase",
+    "source": "Return and Refund Policy"
+  },
+  {
+    "id": 13,
+    "question": "My laptop got water damage — will the warranty cover it?",
+    "expected_answer": "No. Liquid spills void the warranty.",
+    "category": "paraphrase",
+    "source": "Warranty Information"
+  },
+  {
+    "id": 14,
+    "question": "How do I find out where my shipment currently is?",
+    "expected_answer": "Use the tracking number sent by email once the order is dispatched.",
+    "category": "paraphrase",
+    "source": "Shipping Policy / FAQ"
+  },
+  {
+    "id": 15,
+    "question": "Can I pay using an e-wallet?",
+    "expected_answer": "Yes. GCash and Maya are accepted (among other methods).",
+    "category": "paraphrase",
+    "source": "Payment Methods"
+  },
+  {
+    "id": 16,
+    "question": "What email can I use to reach support?",
+    "expected_answer": "support@novatech-demo.com",
+    "category": "paraphrase",
+    "source": "Store Hours and Contact Information"
+  },
+  {
+    "id": 17,
+    "question": "My package arrived broken — what should I do?",
+    "expected_answer": "Report the damaged item within 48 hours and provide photos for verification.",
+    "category": "paraphrase",
+    "source": "FAQ"
+  },
+  {
+    "id": 18,
+    "question": "List all accepted payment methods.",
+    "expected_answer": "GCash, Maya, Visa, Mastercard, bank transfer, and cash on delivery.",
+    "category": "multi-fact",
+    "source": "Payment Methods"
+  },
+  {
+    "id": 19,
+    "question": "What actions void the warranty?",
+    "expected_answer": "Physical damage, liquid spills, and unauthorized repairs.",
+    "category": "multi-fact",
+    "source": "Warranty Information"
+  },
+  {
+    "id": 20,
+    "question": "What conditions must be met for a product to be eligible for return?",
+    "expected_answer": "Requested within 7 days of receipt, unused, and in original packaging.",
+    "category": "multi-fact",
+    "source": "Return and Refund Policy"
+  },
+  {
+    "id": 21,
+    "question": "Which items are non-refundable?",
+    "expected_answer": "Opened software products and customized items.",
+    "category": "multi-fact",
+    "source": "Return and Refund Policy"
+  },
+  {
+    "id": 22,
+    "question": "Does NovaTech have a physical store I can walk into?",
+    "expected_answer": "Not specified in the knowledge base — the system should decline / say it doesn't have that info.",
+    "category": "out-of-scope",
+    "source": "none"
+  },
+  {
+    "id": 23,
+    "question": "How much does a NovaTech laptop cost?",
+    "expected_answer": "Not available in the knowledge base — the system should not invent a price.",
+    "category": "out-of-scope",
+    "source": "none"
+  },
+  {
+    "id": 24,
+    "question": "Is there a loyalty or rewards program?",
+    "expected_answer": "Not mentioned in the knowledge base — the system should decline.",
+    "category": "out-of-scope",
+    "source": "none"
+  },
+  {
+    "id": 25,
+    "question": "Can I extend my laptop warranty beyond the standard period?",
+    "expected_answer": "Not mentioned in the knowledge base — the system should decline.",
+    "category": "out-of-scope",
+    "source": "none"
+  },
+  {
+    "id": 26,
+    "question": "What is the return shipping fee for a returned item?",
+    "expected_answer": "Not specified in the knowledge base — the system should decline.",
+    "category": "out-of-scope",
+    "source": "none"
+  },
+  {
+    "id": 27,
+    "question": "It's Sunday afternoon — can I reach customer support by phone?",
+    "expected_answer": "No. Support operates Monday to Saturday only, so it is closed on Sundays.",
+    "category": "inference",
+    "source": "Store Hours and Contact Information"
+  },
+  {
+    "id": 28,
+    "question": "My order totals PHP 2,500 — do I qualify for free shipping?",
+    "expected_answer": "No. Free shipping applies only to orders above PHP 3,000.",
+    "category": "inference",
+    "source": "Shipping Policy"
+  },
+  {
+    "id": 29,
+    "question": "It's 7:00 PM on a Wednesday — is support available?",
+    "expected_answer": "No. Support closes at 6:00 PM.",
+    "category": "inference",
+    "source": "Store Hours and Contact Information"
+  },
+  {
+    "id": 30,
+    "question": "I received my item 9 days ago and want to return it — can I?",
+    "expected_answer": "No. The return window is 7 days from receipt.",
+    "category": "inference",
+    "source": "Return and Refund Policy"
+  }
+]
