@@ -32,8 +32,9 @@ const SUGGESTED_QUESTIONS = [
 //   { id: "company_456", name: "GreenLeaf Organics", location: "Quezon City", initials: "GL", description: "Retailer of organic food and sustainable products." },
 // ];
 
+// Main chat page where clients pick a company and talk to its AI assistant.
 function ClientChat(){
-  
+
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
@@ -51,6 +52,8 @@ function ClientChat(){
   const [chatHistoryByCompany, setChatHistoryByCompany] = useState({});
   const defaultGreeting = { sender: "ai", text: "Hi! how can I help you?" };
   const [suggestionsByCompany, setSuggestionsByCompany] = useState({});
+  
+  // Fetch the suggested questions for the selected company (only once per company).
   useEffect(() => {
     if (!selectedCompany) return;
     const companyId = selectedCompany.id;
@@ -76,6 +79,7 @@ function ClientChat(){
   }, [selectedCompany]);
 
 
+  // Load the list of companies from the API and select the first one by default.
   const fetchCompanies = async () => {
     try {
       setCompaniesLoading(true);
@@ -105,6 +109,7 @@ function ClientChat(){
     }
   };
 
+  // Load the companies once when the page first opens.
   useEffect(() => {
     fetchCompanies();
   }, []);
@@ -117,6 +122,7 @@ function ClientChat(){
     description: "No company has been added yet.",
   };
 
+  // Apply the light/dark theme to the page and remember the choice in localStorage.
   useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
@@ -130,6 +136,7 @@ function ClientChat(){
   const textareaRef = React.useRef(null)
   const chatEndRef = React.useRef(null)
 
+  // Send the user's message to the chat API and add both messages to the history.
   const handleSendMessages = async (overrideText) => {
     const outgoing = (typeof overrideText === "string" ? overrideText : message).trim();
     if (!outgoing || !selectedCompany || isSending) return;
@@ -190,6 +197,7 @@ function ClientChat(){
     }
   };
 
+  // Auto-scroll to the latest message whenever the chat updates.
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [selectedCompany, chatHistoryByCompany, isSending])
@@ -207,6 +215,7 @@ function ClientChat(){
     );
   }
 
+  // Update the message text and auto-grow the textarea to fit its content.
   const handleInputChange = (e) => {
     setMessage(e.target.value)
     const el = textareaRef.current
@@ -215,6 +224,7 @@ function ClientChat(){
     el.style.height = `${el.scrollHeight}px`
   }
 
+  // Send the message on Enter; allow Shift+Enter to add a new line.
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -425,6 +435,7 @@ function ClientChat(){
 }
 
 
+// Root component that sets up the routes for each page.
 function App() {
   return (
     <Router>
